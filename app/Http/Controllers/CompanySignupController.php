@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Filament\Pages\Dashboard;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -52,9 +53,9 @@ class CompanySignupController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('filament.admin.home', [
-            'tenant' => $organization->slug,
-        ]);
+        return redirect()->to(
+            Dashboard::getUrl(panel: 'admin', tenant: $organization)
+        );
     }
 
     private function generateUniqueOrganizationSlug(string $companyName): string

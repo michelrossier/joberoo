@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\Dashboard;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,9 +40,9 @@ class CompanySignupTest extends TestCase
         $this->assertNotNull($organization);
         $this->assertNotNull($user);
 
-        $response->assertRedirect(route('filament.admin.home', [
-            'tenant' => $organization->slug,
-        ]));
+        $response->assertRedirect(
+            Dashboard::getUrl(panel: 'admin', tenant: $organization)
+        );
 
         $this->assertAuthenticatedAs($user);
         $this->assertTrue(Hash::check('super-secret-password', $user->password));
@@ -79,8 +80,8 @@ class CompanySignupTest extends TestCase
             ->first();
 
         $this->assertNotNull($organization);
-        $response->assertRedirect(route('filament.admin.home', [
-            'tenant' => 'talent-rocket-2',
-        ]));
+        $response->assertRedirect(
+            Dashboard::getUrl(panel: 'admin', tenant: $organization)
+        );
     }
 }
