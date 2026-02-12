@@ -4,6 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrganizationResource\Pages;
 use App\Models\Organization;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -44,6 +47,34 @@ class OrganizationResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
+                Section::make('Bewerber-Kommunikation')
+                    ->description('Vorlagen fuer Status-Nachrichten an Bewerber verwalten.')
+                    ->schema([
+                        Repeater::make('application_status_message_templates')
+                            ->label('Vorlagen')
+                            ->minItems(1)
+                            ->default(fn (?Organization $record): array => $record?->getApplicationStatusMessageTemplatesOrDefault() ?? Organization::defaultApplicationStatusMessageTemplates())
+                            ->itemLabel(fn (array $state): ?string => filled($state['subject'] ?? null) ? (string) $state['subject'] : 'Neue Vorlage')
+                            ->collapsible()
+                            ->reorderableWithButtons()
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Name')
+                                    ->required()
+                                    ->maxLength(120),
+                                TextInput::make('subject')
+                                    ->label('Betreff')
+                                    ->live(onBlur: true)
+                                    ->required()
+                                    ->maxLength(255),
+                                RichEditor::make('body_html')
+                                    ->label('Nachricht')
+                                    ->required()
+                                    ->columnSpanFull(),
+                            ])
+                            ->columnSpanFull(),
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 

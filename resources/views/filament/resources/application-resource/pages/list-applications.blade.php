@@ -14,9 +14,14 @@
                     x-on:dragover.prevent
                     x-on:drop.prevent="
                         const id = Number(event.dataTransfer.getData('application-id'));
+                        const currentStatus = event.dataTransfer.getData('application-status');
+                        const targetStatus = '{{ $lane['value'] }}';
 
-                        if (! Number.isNaN(id)) {
-                            $wire.moveApplication(id, '{{ $lane['value'] }}');
+                        if (! Number.isNaN(id) && currentStatus !== targetStatus) {
+                            $wire.mountAction('statusTransition', {
+                                applicationId: id,
+                                newStatus: targetStatus,
+                            });
                         }
                     "
                 >
@@ -25,7 +30,10 @@
                             wire:key="application-card-{{ $application->id }}"
                             draggable="true"
                             class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
-                            x-on:dragstart="event.dataTransfer.setData('application-id', '{{ $application->id }}')"
+                            x-on:dragstart="
+                                event.dataTransfer.setData('application-id', '{{ $application->id }}');
+                                event.dataTransfer.setData('application-status', '{{ $lane['value'] }}');
+                            "
                         >
                             <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $application->full_name }}</p>
                             <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">{{ $application->campaign?->title ?? '-' }}</p>
@@ -55,4 +63,6 @@
             </section>
         @endforeach
     </div>
+
+    <x-filament-actions::modals />
 </x-filament-panels::page>
