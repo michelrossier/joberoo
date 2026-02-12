@@ -2,7 +2,7 @@
 
 namespace App\Filament\Auth;
 
-use App\Filament\Resources\CampaignResource;
+use App\Filament\Pages\Dashboard;
 use Filament\Facades\Filament;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Illuminate\Http\RedirectResponse;
@@ -27,6 +27,6 @@ class LoginResponse implements LoginResponseContract
             return redirect()->to(Filament::getUrl() ?? '/');
         }
 
-        return redirect()->to(CampaignResource::getUrl(panel: $panel->getId(), tenant: $tenant));
+        return redirect()->to(Dashboard::getUrl(panel: $panel->getId(), tenant: $tenant));
     }
 }
