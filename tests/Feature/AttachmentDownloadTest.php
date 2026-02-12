@@ -1,0 +1,51 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Application;
+use App\Models\Attachment;
+use App\Models\Campaign;
+use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+class AttachmentDownloadTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_attachment_download_requires_membership(): void
+    {
+        Storage::fake('local');
+
+        $organization = Organization::factory()->create();
+        $campaign = Campaign::factory()->create(['organization_id' => $organization->id]);
+        $application = Application::factory()->create(['campaign_id' => $campaign->id]);
+
+        $attachment = Attachment::factory()->create([
+            'application_id' => $application->id,
+            'type' => 'resume',
+            'original_name' => 'resume.pdf',
+            'storage_path' => "applications/{$application->id}/resume.pdf",
+        ]);
+
+        Storage::disk('local')->put($attachment->storage_path, 'resume');
+
+        $member = User::factory()->create();
+        $organization->users()->attach($member->id, ['role' => 'recruiter']);
+
+        $this->actingAs($member)
+            ->get(route('attachments.download', $attachment))
+            ->assertOk()
+            ->assertDownload('resume.pdf');
+
+        $otherOrg = Organization::factory()->create();
+        $otherUser = User::factory()->create();
+        $otherOrg->users()->attach($otherUser->id, ['role' => 'recruiter']);
+
+        $this->actingAs($otherUser)
+            ->get(route('attachments.download', $attachment))
+            ->assertForbidden();
+    }
+}

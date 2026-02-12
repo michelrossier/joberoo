@@ -1,0 +1,26 @@
+<?php
+
+use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\CompanySignupController;
+use App\Http\Controllers\PublicCampaignController;
+use Illuminate\Support\Facades\Route;
+
+Route::view('/', 'welcome')->name('home');
+Route::post('/company-signup', [CompanySignupController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('company-signup.store');
+
+Route::get('/o/{org_slug}/c/{campaign_slug}', [PublicCampaignController::class, 'show'])
+    ->name('campaign.show');
+
+Route::post('/o/{org_slug}/c/{campaign_slug}/apply', [PublicCampaignController::class, 'apply'])
+    ->middleware('throttle:applications')
+    ->name('campaign.apply');
+
+Route::get('/o/{org_slug}/c/{campaign_slug}/thanks', [PublicCampaignController::class, 'thanks'])
+    ->name('campaign.thanks');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/attachments/{attachment}', [AttachmentController::class, 'download'])
+        ->name('attachments.download');
+});
