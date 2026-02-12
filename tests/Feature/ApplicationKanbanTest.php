@@ -221,15 +221,21 @@ class ApplicationKanbanTest extends TestCase
         $application = Application::factory()->create([
             'campaign_id' => $campaign->id,
             'status' => ApplicationStatus::New,
+            'first_name' => 'Max',
+            'last_name' => 'Mustermann',
         ]);
 
-        Livewire::test(ListApplications::class)
+        $component = Livewire::test(ListApplications::class)
             ->call('mountAction', 'statusTransition', [
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Reviewed->value,
             ])
             ->assertSet('mountedActionsData.0.subject', 'Vielen Dank fuer Ihre Bewerbung')
             ->assertSet('mountedActionsData.0.send_message', 0);
+
+        $messageHtml = (string) data_get($component->get('mountedActionsData'), '0.message_html');
+
+        $this->assertStringContainsString('Guten Tag Max Mustermann', $messageHtml);
     }
 
     private function authenticateRecruiterForTenant(): array

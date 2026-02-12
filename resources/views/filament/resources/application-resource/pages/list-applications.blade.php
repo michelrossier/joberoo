@@ -29,7 +29,7 @@
                         <article
                             wire:key="application-card-{{ $application->id }}"
                             draggable="true"
-                            class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
+                            class="cursor-default rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:cursor-grab hover:border-gray-300 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
                             x-on:dragstart="
                                 event.dataTransfer.setData('application-id', '{{ $application->id }}');
                                 event.dataTransfer.setData('application-status', '{{ $lane['value'] }}');
@@ -48,7 +48,7 @@
                             </p>
 
                             <a
-                                class="mt-3 inline-flex text-xs font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+                                class="mt-3 inline-flex cursor-pointer text-xs font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
                                 href="{{ \App\Filament\Resources\ApplicationResource::getUrl('view', ['record' => $application]) }}"
                             >
                                 Bewerbung anzeigen

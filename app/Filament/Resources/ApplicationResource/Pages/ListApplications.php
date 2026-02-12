@@ -10,6 +10,7 @@ use App\Notifications\ApplicationStatusMessageNotification;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -20,6 +21,7 @@ use Filament\Resources\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ListApplications extends Page
@@ -33,32 +35,42 @@ class ListApplications extends Page
         return Action::make('statusTransition')
             ->modalHeading('Status aktualisieren')
             ->modalDescription('Moechten Sie dem Bewerber eine Nachricht senden?')
-            ->modalSubmitActionLabel('Status aktualisieren')
+            ->modalSubmitActionLabel(fn (): string => $this->isSendMessageSelectedForMountedAction()
+                ? 'E-Mail senden'
+                : 'Status aktualisieren')
             ->modalCancelAction(false)
             ->modalCloseButton(false)
             ->closeModalByClickingAway(false)
             ->closeModalByEscaping(false)
             ->extraModalFooterActions(fn (Action $action): array => [
                 $action->makeModalSubmitAction('skipMessage', arguments: ['force_without_message' => true])
-                    ->label('Keine Nachricht versenden')
+                    ->label('Keine Nachricht senden')
                     ->color('gray')
+                    ->extraAttributes(['class' => 'ms-auto'])
                     ->visible(fn (): bool => $this->isSendMessageSelectedForMountedAction()),
             ])
             ->mountUsing(function (Form $form, array $arguments): void {
                 $applicationId = (int) ($arguments['applicationId'] ?? 0);
                 $newStatus = (string) ($arguments['newStatus'] ?? '');
+                $application = $this->getBoardQuery()->whereKey($applicationId)->first();
 
                 $templates = $this->getMessageTemplatesIndexed();
                 $defaultTemplateKey = array_key_first($templates);
                 $defaultTemplate = $defaultTemplateKey !== null ? $templates[$defaultTemplateKey] : null;
+                $recipientName = $this->resolveRecipientName($application);
 
                 $form->fill([
                     'application_id' => $applicationId,
                     'new_status' => $newStatus,
+                    'recipient_email' => $application?->email ?? '',
+                    'recipient_name' => $recipientName,
                     'send_message' => 0,
                     'template_key' => $defaultTemplateKey,
                     'subject' => $defaultTemplate['subject'] ?? '',
-                    'message_html' => $defaultTemplate['body_html'] ?? '',
+                    'message_html' => $this->buildMessageHtmlWithSalutation(
+                        (string) ($defaultTemplate['body_html'] ?? ''),
+                        $recipientName,
+                    ),
                 ]);
             })
             ->form([
@@ -66,6 +78,8 @@ class ListApplications extends Page
                     ->required(),
                 Hidden::make('new_status')
                     ->required(),
+                Hidden::make('recipient_email'),
+                Hidden::make('recipient_name'),
                 Select::make('send_message')
                     ->label('Nachricht an Bewerber')
                     ->options([
@@ -76,21 +90,36 @@ class ListApplications extends Page
                     ->native(false)
                     ->live()
                     ->required(),
+                Placeholder::make('recipient_email_info')
+                    ->label('Empfaenger E-Mail')
+                    ->content(function (Get $get): string {
+                        $email = trim((string) ($get('recipient_email') ?? ''));
+
+                        return filled($email)
+                            ? $email
+                            : 'Keine E-Mail-Adresse hinterlegt';
+                    })
+                    ->visible(fn (Get $get): bool => $this->wantsToSendMessage($get)),
                 Select::make('template_key')
                     ->label('Vorlage')
                     ->options(fn (): array => $this->getMessageTemplateOptions())
                     ->native(false)
                     ->live()
                     ->visible(fn (Get $get): bool => $this->wantsToSendMessage($get))
-                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                    ->afterStateUpdated(function (?string $state, Set $set, Get $get): void {
                         $template = $this->resolveMessageTemplate($state);
 
                         if (! $template) {
                             return;
                         }
 
+                        $recipientName = trim((string) ($get('recipient_name') ?? ''));
+
                         $set('subject', $template['subject']);
-                        $set('message_html', $template['body_html']);
+                        $set('message_html', $this->buildMessageHtmlWithSalutation(
+                            (string) $template['body_html'],
+                            $recipientName,
+                        ));
                     }),
                 TextInput::make('subject')
                     ->label('Betreff')
@@ -341,5 +370,41 @@ class ListApplications extends Page
         $tenant = Filament::getTenant();
 
         return $tenant instanceof Organization ? $tenant : null;
+    }
+
+    protected function resolveRecipientName(?Application $application): string
+    {
+        if (! $application) {
+            return '';
+        }
+
+        return trim($application->full_name);
+    }
+
+    protected function buildMessageHtmlWithSalutation(string $templateBodyHtml, string $recipientName): string
+    {
+        $recipientName = trim($recipientName);
+        $salutation = filled($recipientName)
+            ? "Guten Tag {$recipientName}"
+            : 'Guten Tag';
+        $salutationParagraph = '<p>' . e($salutation) . ',</p>';
+
+        $templateBodyHtml = trim($templateBodyHtml);
+
+        if ($templateBodyHtml === '') {
+            return $salutationParagraph;
+        }
+
+        $textStart = Str::of(strip_tags($templateBodyHtml))
+            ->squish()
+            ->lower();
+
+        if ($textStart->startsWith('guten tag')) {
+            return $templateBodyHtml;
+        }
+
+        $templateBodyHtml = (string) preg_replace('/^\s*<p>\s*hallo\s*,?\s*<\/p>/i', '', $templateBodyHtml);
+
+        return $salutationParagraph . ltrim($templateBodyHtml);
     }
 }
