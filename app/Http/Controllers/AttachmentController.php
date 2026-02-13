@@ -14,7 +14,11 @@ class AttachmentController extends Controller
         $organization = $attachment->application->campaign->organization;
         $user = auth()->user();
 
-        if (! $user || ! $user->organizations()->whereKey($organization)->exists()) {
+        if (! $user) {
+            abort(403);
+        }
+
+        if (! $user->isSuperAdmin() && ! $user->organizations()->whereKey($organization)->exists()) {
             abort(403);
         }
 

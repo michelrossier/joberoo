@@ -211,6 +211,10 @@ class PublicCampaignController extends Controller
             return false;
         }
 
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         return $user->organizations()
             ->whereKey($organization)
             ->exists();

@@ -29,6 +29,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'name',
         'email',
         'password',
+        'is_super_admin',
     ];
 
     /**
@@ -55,21 +56,39 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function getTenants(Panel $panel): Collection
     {
+        if ($this->isSuperAdmin()) {
+            return Organization::query()
+                ->orderBy('name')
+                ->get();
+        }
+
         return $this->organizations;
     }
 
     public function canAccessTenant(Model $tenant): bool
     {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
         return $this->organizations()->whereKey($tenant)->exists();
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
         return $this->organizations()->exists();
     }
 
     public function isAdminForOrganization(Organization $organization): bool
     {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
         return $this->organizations()
             ->whereKey($organization)
             ->wherePivot('role', 'admin')
@@ -78,9 +97,18 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function isAnyAdmin(): bool
     {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
         return $this->organizations()
             ->wherePivot('role', 'admin')
             ->exists();
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->is_super_admin;
     }
 
     /**
@@ -93,6 +121,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
         ];
     }
 }

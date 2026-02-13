@@ -108,6 +108,10 @@ class OrganizationResource extends Resource
     {
         $user = auth()->user();
 
+        if ($user?->isSuperAdmin()) {
+            return parent::getEloquentQuery();
+        }
+
         return parent::getEloquentQuery()
             ->when($user, function (Builder $query) use ($user) {
                 $query->whereHas('users', function (Builder $memberQuery) use ($user) {
