@@ -209,6 +209,10 @@ class CampaignResource extends Resource
             return false;
         }
 
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         return $user->isAdminForOrganization($tenant);
     }
 
