@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ApplicationResource\Pages;
 
 use App\Enums\ApplicationStatus;
+use App\Filament\Exports\ApplicationsExcelExport;
 use App\Filament\Resources\ApplicationResource;
 use App\Models\Application;
 use App\Models\Organization;
@@ -23,12 +24,25 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use pxlrbt\FilamentExcel\Actions\Pages\ExportAction as ExcelExportAction;
 
 class ListApplications extends Page
 {
     protected static string $resource = ApplicationResource::class;
 
     protected static string $view = 'filament.resources.application-resource.pages.list-applications';
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            ExcelExportAction::make('exportApplications')
+                ->label('Excel exportieren')
+                ->exports([
+                    ApplicationsExcelExport::make('all_applications')
+                        ->label('Alle Bewerbungen'),
+                ]),
+        ];
+    }
 
     public function statusTransitionAction(): Action
     {
