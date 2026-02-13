@@ -18,14 +18,7 @@ class PublicCampaignController extends Controller
     public function show(Request $request, string $orgSlug, string $campaignSlug)
     {
         $organization = Organization::where('slug', $orgSlug)->firstOrFail();
-        $campaignQuery = $organization->campaigns()
-            ->where('slug', $campaignSlug);
-
-        if (! $this->canPreviewOrganizationCampaigns($organization)) {
-            $campaignQuery->where('status', CampaignStatus::Published);
-        }
-
-        $campaign = $campaignQuery->firstOrFail();
+        $campaign = $this->findAccessibleCampaign($organization, $campaignSlug);
 
         if ($this->isPublishedCampaign($campaign)) {
             DB::table('campaigns')
@@ -55,10 +48,7 @@ class PublicCampaignController extends Controller
     public function apply(Request $request, string $orgSlug, string $campaignSlug)
     {
         $organization = Organization::where('slug', $orgSlug)->firstOrFail();
-        $campaign = $organization->campaigns()
-            ->where('slug', $campaignSlug)
-            ->where('status', CampaignStatus::Published)
-            ->firstOrFail();
+        $campaign = $this->findAccessibleCampaign($organization, $campaignSlug);
         $tracking = $this->resolveTrackingData($request, $campaign->id);
 
         $validated = $request->validate([
@@ -69,8 +59,8 @@ class PublicCampaignController extends Controller
             'linkedin_url' => ['nullable', 'url', 'max:255'],
             'portfolio_url' => ['nullable', 'url', 'max:255'],
             'cover_letter_text' => ['nullable', 'string'],
-            'resume' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
-            'cover_letter' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+            'cover_letter' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
         ], [
             'first_name.required' => 'Bitte geben Sie Ihren Vornamen ein.',
             'last_name.required' => 'Bitte geben Sie Ihren Nachnamen ein.',
@@ -79,10 +69,8 @@ class PublicCampaignController extends Controller
             'phone.max' => 'Die Telefonnummer ist zu lang.',
             'linkedin_url.url' => 'Bitte geben Sie eine gueltige LinkedIn-URL ein.',
             'portfolio_url.url' => 'Bitte geben Sie eine gueltige Portfolio-URL ein.',
-            'resume.required' => 'Bitte laden Sie Ihren Lebenslauf hoch.',
             'resume.mimes' => 'Der Lebenslauf muss eine PDF-, DOC- oder DOCX-Datei sein.',
             'resume.max' => 'Der Lebenslauf darf maximal 10 MB gross sein.',
-            'cover_letter.required' => 'Bitte laden Sie Ihr Anschreiben hoch.',
             'cover_letter.mimes' => 'Das Anschreiben muss eine PDF-, DOC- oder DOCX-Datei sein.',
             'cover_letter.max' => 'Das Anschreiben darf maximal 10 MB gross sein.',
         ]);
@@ -111,37 +99,41 @@ class PublicCampaignController extends Controller
                 'campaign' => $tracking['source_campaign'] ?? '-',
             ]);
 
-            $resumeFile = $request->file('resume');
-            $resumePath = $resumeFile->storeAs(
-                "applications/{$application->id}",
-                'resume.' . $resumeFile->getClientOriginalExtension(),
-                'local'
-            );
+            if ($request->hasFile('resume')) {
+                $resumeFile = $request->file('resume');
+                $resumePath = $resumeFile->storeAs(
+                    "applications/{$application->id}",
+                    'resume.' . $resumeFile->getClientOriginalExtension(),
+                    'local'
+                );
 
-            Attachment::create([
-                'application_id' => $application->id,
-                'type' => 'resume',
-                'original_name' => $resumeFile->getClientOriginalName(),
-                'mime_type' => $resumeFile->getClientMimeType(),
-                'size_bytes' => $resumeFile->getSize(),
-                'storage_path' => $resumePath,
-            ]);
+                Attachment::create([
+                    'application_id' => $application->id,
+                    'type' => 'resume',
+                    'original_name' => $resumeFile->getClientOriginalName(),
+                    'mime_type' => $resumeFile->getClientMimeType(),
+                    'size_bytes' => $resumeFile->getSize(),
+                    'storage_path' => $resumePath,
+                ]);
+            }
 
-            $coverLetterFile = $request->file('cover_letter');
-            $coverLetterPath = $coverLetterFile->storeAs(
-                "applications/{$application->id}",
-                'cover-letter.' . $coverLetterFile->getClientOriginalExtension(),
-                'local'
-            );
+            if ($request->hasFile('cover_letter')) {
+                $coverLetterFile = $request->file('cover_letter');
+                $coverLetterPath = $coverLetterFile->storeAs(
+                    "applications/{$application->id}",
+                    'cover-letter.' . $coverLetterFile->getClientOriginalExtension(),
+                    'local'
+                );
 
-            Attachment::create([
-                'application_id' => $application->id,
-                'type' => 'cover_letter',
-                'original_name' => $coverLetterFile->getClientOriginalName(),
-                'mime_type' => $coverLetterFile->getClientMimeType(),
-                'size_bytes' => $coverLetterFile->getSize(),
-                'storage_path' => $coverLetterPath,
-            ]);
+                Attachment::create([
+                    'application_id' => $application->id,
+                    'type' => 'cover_letter',
+                    'original_name' => $coverLetterFile->getClientOriginalName(),
+                    'mime_type' => $coverLetterFile->getClientMimeType(),
+                    'size_bytes' => $coverLetterFile->getSize(),
+                    'storage_path' => $coverLetterPath,
+                ]);
+            }
         });
 
         Notification::send(
@@ -158,10 +150,7 @@ class PublicCampaignController extends Controller
     public function thanks(string $orgSlug, string $campaignSlug)
     {
         $organization = Organization::where('slug', $orgSlug)->firstOrFail();
-        $campaign = $organization->campaigns()
-            ->where('slug', $campaignSlug)
-            ->where('status', CampaignStatus::Published)
-            ->firstOrFail();
+        $campaign = $this->findAccessibleCampaign($organization, $campaignSlug);
 
         return view('campaigns.thanks', [
             'organization' => $organization,
@@ -225,6 +214,18 @@ class PublicCampaignController extends Controller
         return $user->organizations()
             ->whereKey($organization)
             ->exists();
+    }
+
+    private function findAccessibleCampaign(Organization $organization, string $campaignSlug): Campaign
+    {
+        $campaignQuery = $organization->campaigns()
+            ->where('slug', $campaignSlug);
+
+        if (! $this->canPreviewOrganizationCampaigns($organization)) {
+            $campaignQuery->where('status', CampaignStatus::Published);
+        }
+
+        return $campaignQuery->firstOrFail();
     }
 
     private function isPublishedCampaign(Campaign $campaign): bool

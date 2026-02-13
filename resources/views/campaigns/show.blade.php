@@ -91,10 +91,10 @@
                     <textarea id="cover_letter_text" name="cover_letter_text">{{ old('cover_letter_text') }}</textarea>
 
                     <label for="resume">Lebenslauf (PDF/DOC/DOCX)</label>
-                    <input id="resume" type="file" name="resume" required>
+                    <input id="resume" type="file" name="resume">
 
                     <label for="cover_letter">Anschreiben-Datei (PDF/DOC/DOCX)</label>
-                    <input id="cover_letter" type="file" name="cover_letter" required>
+                    <input id="cover_letter" type="file" name="cover_letter">
 
                     <button class="btn" type="submit">{{ $campaign->cta_text ?? 'Jetzt bewerben' }}</button>
                     <p class="helper">Dateien werden sicher gespeichert und vom Recruiting-Team geprueft.</p>
