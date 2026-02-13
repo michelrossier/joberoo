@@ -6,9 +6,10 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "filament/filament": "^3.3",
         "php": "^8.2",
+        "filament/filament": "^3.3",
         "laravel/framework": "^12.0",
+        "laravel/nightwatch": "^1.22",
         "laravel/tinker": "^2.10.1"
     },
     "require-dev": {
