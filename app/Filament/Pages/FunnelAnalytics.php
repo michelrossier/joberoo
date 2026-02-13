@@ -3,6 +3,11 @@
 namespace App\Filament\Pages;
 
 use App\Enums\ApplicationStatus;
+use App\Filament\Widgets\FunnelAnalyticsCampaignPerformanceChart;
+use App\Filament\Widgets\FunnelAnalyticsOverviewStatsWidget;
+use App\Filament\Widgets\FunnelAnalyticsRecruiterThroughputChart;
+use App\Filament\Widgets\FunnelAnalyticsSourcesChart;
+use App\Filament\Widgets\FunnelAnalyticsStageFunnelChart;
 use App\Models\ApplicationActivity;
 use App\Models\Application;
 use App\Models\Campaign;
@@ -10,6 +15,8 @@ use App\Models\CampaignVisit;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
+use Filament\Widgets\Widget;
+use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -31,6 +38,43 @@ class FunnelAnalytics extends Page
     public int | string | null $campaignId = null;
 
     public int $days = 30;
+
+    /**
+     * @return array<class-string<Widget> | WidgetConfiguration>
+     */
+    protected function getFooterWidgets(): array
+    {
+        return [
+            FunnelAnalyticsOverviewStatsWidget::class,
+            FunnelAnalyticsStageFunnelChart::class,
+            FunnelAnalyticsSourcesChart::class,
+            FunnelAnalyticsRecruiterThroughputChart::class,
+            FunnelAnalyticsCampaignPerformanceChart::class,
+        ];
+    }
+
+    public function getFooterWidgetsColumns(): int | string | array
+    {
+        return [
+            'md' => 2,
+            'xl' => 2,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getWidgetData(): array
+    {
+        return [
+            'totals' => $this->totals,
+            'kpis' => $this->kpis,
+            'stageFunnel' => $this->stageFunnel,
+            'rows' => $this->rows,
+            'recruiterThroughput' => $this->recruiterThroughput,
+            'campaignPerformance' => $this->campaignPerformance,
+        ];
+    }
 
     public static function canAccess(): bool
     {
