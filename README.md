@@ -222,6 +222,18 @@ php artisan test --filter=InterviewKitEvaluationTest
 ## Deployment Notes (Laravel Cloud)
 
 - Ensure migrations run on deploy.
+- Set the Laravel Cloud deploy command to:
+
+```bash
+composer run deploy:cloud --no-interaction
+```
+
+- This command handles:
+  - `npm ci`
+  - `npm run build`
+  - `php artisan migrate --force`
+  - `php artisan optimize`
+  - `php artisan queue:restart`
 - Configure a persistent queue worker process.
 - Keep Postmark webhook configured to your production URL.
 - See: `docs/laravel-cloud-queue-workers.md`
