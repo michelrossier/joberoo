@@ -116,7 +116,7 @@ class EmailMessage extends Model
         return match ($status) {
             self::STATUS_SENT => 'Gesendet',
             self::STATUS_DELIVERED => 'Zugestellt',
-            self::STATUS_OPENED => 'Geoeffnet',
+            self::STATUS_OPENED => 'Geöffnet',
             self::STATUS_BOUNCED => 'Bounce',
             self::STATUS_SPAM_COMPLAINT => 'Spam-Beschwerde',
             self::STATUS_FAILED => 'Fehlgeschlagen',

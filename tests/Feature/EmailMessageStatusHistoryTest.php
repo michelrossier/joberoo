@@ -59,6 +59,7 @@ class EmailMessageStatusHistoryTest extends TestCase
                 $history
             )
         );
+        $this->assertSame('Geöffnet', $history[2]['label']);
     }
 
     public function test_failed_status_history_uses_last_event_timestamp(): void
