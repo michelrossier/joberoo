@@ -11,9 +11,11 @@ use App\Models\CampaignScorecardCompetency;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\ApplicationStatusMessageNotification;
+use Illuminate\Notifications\SendQueuedNotifications;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -286,6 +288,40 @@ class ApplicationKanbanTest extends TestCase
                     && $notification->subjectLine === 'Kurzes Update zu Ihrer Bewerbung';
             }
         );
+    }
+
+    public function test_status_transition_action_queues_status_message_notification_job(): void
+    {
+        Queue::fake();
+
+        [$organization] = $this->authenticateRecruiterForTenant();
+
+        $campaign = Campaign::factory()->create([
+            'organization_id' => $organization->id,
+        ]);
+
+        $application = Application::factory()->create([
+            'campaign_id' => $campaign->id,
+            'status' => ApplicationStatus::New,
+            'email' => 'applicant@example.com',
+        ]);
+
+        Livewire::test(ListApplications::class)
+            ->call('mountAction', 'statusTransition', [
+                'applicationId' => $application->id,
+                'newStatus' => ApplicationStatus::Interview->value,
+            ])
+            ->set('mountedActionsData.0.send_message', 1)
+            ->set('mountedActionsData.0.template_key', '0')
+            ->set('mountedActionsData.0.subject', 'Kurzes Update zu Ihrer Bewerbung')
+            ->set('mountedActionsData.0.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
+            ->call('callMountedAction');
+
+        Queue::assertPushed(SendQueuedNotifications::class, function (SendQueuedNotifications $job) use ($application): bool {
+            return $job->notification instanceof ApplicationStatusMessageNotification
+                && $job->notification->subjectLine === 'Kurzes Update zu Ihrer Bewerbung'
+                && $job->notification->applicationId === $application->id;
+        });
     }
 
     public function test_final_status_transition_requires_complete_evaluation(): void

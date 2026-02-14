@@ -12,6 +12,10 @@ class ApplicationStatusMessageNotification extends Notification implements Shoul
 {
     use Queueable;
 
+    public int $tries = 3;
+
+    public int $backoff = 10;
+
     public ?int $applicationId = null;
 
     public function __construct(
