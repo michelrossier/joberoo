@@ -138,15 +138,18 @@ class EmailMessageResource extends Resource
             return null;
         }
 
-        $lines = collect($history)
+        $rows = collect($history)
             ->map(static fn (array $entry): string => sprintf(
-                '%s: %s',
+                '<tr><td style="padding: 0 0.5rem 0 0; white-space: nowrap;">%s:</td><td style="padding: 0; white-space: nowrap;">%s</td></tr>',
                 e($entry['label']),
                 e($entry['occurred_at']->format('d.m.Y H:i:s'))
             ))
-            ->implode('<br>');
+            ->implode('');
 
-        return new HtmlString($lines);
+        return new HtmlString(sprintf(
+            '<table style="border-collapse: collapse;"><tbody>%s</tbody></table>',
+            $rows
+        ));
     }
 
     public static function getEloquentQuery(): Builder
