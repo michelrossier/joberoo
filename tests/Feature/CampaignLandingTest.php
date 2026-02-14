@@ -18,7 +18,7 @@ class CampaignLandingTest extends TestCase
             'status' => CampaignStatus::Published,
         ]);
 
-        $response = $this->get("/o/{$campaign->organization->slug}/c/{$campaign->slug}");
+        $response = $this->get("/{$campaign->organization->slug}/{$campaign->slug}");
 
         $response->assertOk();
         $response->assertSee($campaign->title);
@@ -31,9 +31,9 @@ class CampaignLandingTest extends TestCase
             'views_count' => 0,
         ]);
 
-        $this->get("/o/{$campaign->organization->slug}/c/{$campaign->slug}")
+        $this->get("/{$campaign->organization->slug}/{$campaign->slug}")
             ->assertOk();
-        $this->get("/o/{$campaign->organization->slug}/c/{$campaign->slug}")
+        $this->get("/{$campaign->organization->slug}/{$campaign->slug}")
             ->assertOk();
 
         $this->assertDatabaseHas('campaigns', [
@@ -49,7 +49,7 @@ class CampaignLandingTest extends TestCase
             'views_count' => 0,
         ]);
 
-        $response = $this->get("/o/{$campaign->organization->slug}/c/{$campaign->slug}");
+        $response = $this->get("/{$campaign->organization->slug}/{$campaign->slug}");
 
         $response->assertNotFound();
         $this->assertDatabaseHas('campaigns', [
@@ -69,7 +69,7 @@ class CampaignLandingTest extends TestCase
         $campaign->organization->users()->attach($user->id, ['role' => 'admin']);
 
         $response = $this->actingAs($user)
-            ->get("/o/{$campaign->organization->slug}/c/{$campaign->slug}");
+            ->get("/{$campaign->organization->slug}/{$campaign->slug}");
 
         $response->assertOk();
         $response->assertSee($campaign->title);

@@ -11,7 +11,7 @@ It provides:
 ## What The Project Does
 
 ### Public-facing flow
-- Campaign pages at `/o/{org_slug}/c/{campaign_slug}`
+- Campaign pages at `/{org_slug}/{campaign_slug}`
 - Candidate application submission with optional attachments
 - Thank-you page after submission
 
@@ -141,7 +141,7 @@ npm run dev
 
 - Public home: `http://localhost:8000/`
 - Filament admin: `http://localhost:8000/admin`
-- Example seeded campaign: `http://localhost:8000/o/acme/c/senior-product-designer`
+- Example seeded campaign: `http://localhost:8000/acme/senior-product-designer`
 
 ## Queue And Email Requirements
 

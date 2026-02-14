@@ -16,17 +16,17 @@ Route::post('/webhooks/postmark', PostmarkWebhookController::class)
     ->middleware(VerifyPostmarkWebhookBasicAuth::class)
     ->name('webhooks.postmark');
 
-Route::get('/o/{org_slug}/c/{campaign_slug}', [PublicCampaignController::class, 'show'])
-    ->name('campaign.show');
-
-Route::post('/o/{org_slug}/c/{campaign_slug}/apply', [PublicCampaignController::class, 'apply'])
-    ->middleware('throttle:applications')
-    ->name('campaign.apply');
-
-Route::get('/o/{org_slug}/c/{campaign_slug}/thanks', [PublicCampaignController::class, 'thanks'])
-    ->name('campaign.thanks');
-
 Route::middleware(['auth'])->group(function () {
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'download'])
         ->name('attachments.download');
 });
+
+Route::get('/{org_slug}/{campaign_slug}', [PublicCampaignController::class, 'show'])
+    ->name('campaign.show');
+
+Route::post('/{org_slug}/{campaign_slug}/apply', [PublicCampaignController::class, 'apply'])
+    ->middleware('throttle:applications')
+    ->name('campaign.apply');
+
+Route::get('/{org_slug}/{campaign_slug}/thanks', [PublicCampaignController::class, 'thanks'])
+    ->name('campaign.thanks');
