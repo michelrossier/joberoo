@@ -6,9 +6,9 @@ use App\Filament\Resources\OrganizationResource\Pages;
 use App\Models\Organization;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -20,9 +20,9 @@ class OrganizationResource extends Resource
 {
     protected static ?string $model = Organization::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-office';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office';
 
-    protected static ?string $navigationGroup = 'Verwaltung';
+    protected static string|\UnitEnum|null $navigationGroup = 'Verwaltung';
 
     protected static ?string $modelLabel = 'Organisation';
 
@@ -30,9 +30,9 @@ class OrganizationResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 TextInput::make('name')
                     ->label('Name')

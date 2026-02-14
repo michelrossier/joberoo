@@ -9,9 +9,9 @@ class FunnelAnalyticsRecruiterThroughputChart extends ChartWidget
 {
     protected static ?int $sort = 4;
 
-    protected static ?string $heading = 'Recruiter-Durchsatz';
+    protected ?string $heading = 'Recruiter-Durchsatz';
 
-    protected static ?string $description = 'Aktivitaet und Einstellungen pro Recruiter.';
+    protected ?string $description = 'Aktivitaet und Einstellungen pro Recruiter.';
 
     protected int | string | array $columnSpan = 1;
 
@@ -80,4 +80,3 @@ class FunnelAnalyticsRecruiterThroughputChart extends ChartWidget
         ];
     }
 }
-

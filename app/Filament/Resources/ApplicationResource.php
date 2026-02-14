@@ -10,9 +10,9 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -21,15 +21,14 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 
 class ApplicationResource extends Resource
 {
     protected static ?string $model = Application::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-inbox-arrow-down';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-inbox-arrow-down';
 
-    protected static ?string $navigationGroup = 'Bewerbungsmanagement';
+    protected static string|\UnitEnum|null $navigationGroup = 'Bewerbungsmanagement';
 
     protected static ?string $modelLabel = 'Bewerbung';
 
@@ -39,9 +38,9 @@ class ApplicationResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 TextInput::make('first_name')
                     ->label('Vorname')
@@ -160,9 +159,9 @@ class ApplicationResource extends Resource
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->schema([
                 Section::make('Bewerberdaten')
                     ->schema([

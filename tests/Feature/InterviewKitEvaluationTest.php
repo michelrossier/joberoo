@@ -55,15 +55,15 @@ class InterviewKitEvaluationTest extends TestCase
 
         $component = Livewire::test(ViewApplication::class, ['record' => $application->getRouteKey()])
             ->call('mountAction', 'submit_evaluation')
-            ->assertSet('mountedActionsData.0.stage', ApplicationStatus::Reviewed->value);
+            ->assertSet('mountedActions.0.data.stage', ApplicationStatus::Reviewed->value);
 
-        $reviewedRows = collect((array) data_get($component->get('mountedActionsData'), '0.question_responses'))
+        $reviewedRows = collect((array) data_get($component->get('mountedActions'), '0.data.question_responses'))
             ->values();
         $this->assertSame('Review question A', $reviewedRows->first()['question'] ?? null);
 
-        $component->set('mountedActionsData.0.stage', ApplicationStatus::Interview->value);
+        $component->set('mountedActions.0.data.stage', ApplicationStatus::Interview->value);
 
-        $interviewRows = collect((array) data_get($component->get('mountedActionsData'), '0.question_responses'))
+        $interviewRows = collect((array) data_get($component->get('mountedActions'), '0.data.question_responses'))
             ->values();
         $this->assertSame('Interview question A', $interviewRows->first()['question'] ?? null);
     }
@@ -104,10 +104,10 @@ class InterviewKitEvaluationTest extends TestCase
 
         Livewire::test(ViewApplication::class, ['record' => $application->getRouteKey()])
             ->call('mountAction', 'submit_evaluation')
-            ->set('mountedActionsData.0.stage', ApplicationStatus::Reviewed->value)
-            ->set("mountedActionsData.0.scores.{$competency->id}", 4)
-            ->set('mountedActionsData.0.question_responses.0.answer', '')
-            ->set('mountedActionsData.0.rationale', 'Starker Kandidat.')
+            ->set('mountedActions.0.data.stage', ApplicationStatus::Reviewed->value)
+            ->set("mountedActions.0.data.scores.{$competency->id}", 4)
+            ->set('mountedActions.0.data.question_responses.0.answer', '')
+            ->set('mountedActions.0.data.rationale', 'Starker Kandidat.')
             ->call('callMountedAction')
             ->assertHasErrors();
 
@@ -117,10 +117,10 @@ class InterviewKitEvaluationTest extends TestCase
 
         Livewire::test(ViewApplication::class, ['record' => $application->getRouteKey()])
             ->call('mountAction', 'submit_evaluation')
-            ->set('mountedActionsData.0.stage', ApplicationStatus::Reviewed->value)
-            ->set("mountedActionsData.0.scores.{$competency->id}", 4)
-            ->set('mountedActionsData.0.question_responses.0.answer', 'Antwort auf die Leitfrage.')
-            ->set('mountedActionsData.0.rationale', 'Starker Kandidat.')
+            ->set('mountedActions.0.data.stage', ApplicationStatus::Reviewed->value)
+            ->set("mountedActions.0.data.scores.{$competency->id}", 4)
+            ->set('mountedActions.0.data.question_responses.0.answer', 'Antwort auf die Leitfrage.')
+            ->set('mountedActions.0.data.rationale', 'Starker Kandidat.')
             ->call('callMountedAction')
             ->assertHasNoErrors();
 

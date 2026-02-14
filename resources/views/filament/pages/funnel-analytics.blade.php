@@ -3,11 +3,8 @@
         heading="Filter"
         description="Waehlen Sie Job und Zeitraum fuer die Analyse."
     >
-        <x-filament::grid
-            :default="1"
-            :md="2"
-        >
-            <x-filament::grid.column>
+        <div class="grid gap-6 md:grid-cols-2">
+            <div>
                 <label
                     class="mb-2 block text-sm font-medium text-gray-950 dark:text-white"
                     for="campaign-filter"
@@ -27,9 +24,9 @@
                         @endforeach
                     </x-filament::input.select>
                 </x-filament::input.wrapper>
-            </x-filament::grid.column>
+            </div>
 
-            <x-filament::grid.column>
+            <div>
                 <label
                     class="mb-2 block text-sm font-medium text-gray-950 dark:text-white"
                     for="days-filter"
@@ -48,8 +45,7 @@
                         <option value="365">Letzte 365 Tage</option>
                     </x-filament::input.select>
                 </x-filament::input.wrapper>
-            </x-filament::grid.column>
-        </x-filament::grid>
+            </div>
+        </div>
     </x-filament::section>
 </x-filament-panels::page>
-

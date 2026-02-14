@@ -9,9 +9,9 @@ class FunnelAnalyticsStageFunnelChart extends ChartWidget
 {
     protected static ?int $sort = 2;
 
-    protected static ?string $heading = 'Funnel-Stufen';
+    protected ?string $heading = 'Funnel-Stufen';
 
-    protected static ?string $description = 'Stufenzaehlung und Konversion innerhalb der Recruiting-Pipeline.';
+    protected ?string $description = 'Stufenzaehlung und Konversion innerhalb der Recruiting-Pipeline.';
 
     protected int | string | array $columnSpan = 'full';
 
@@ -93,4 +93,3 @@ class FunnelAnalyticsStageFunnelChart extends ChartWidget
         ];
     }
 }
-

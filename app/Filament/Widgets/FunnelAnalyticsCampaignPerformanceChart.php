@@ -9,9 +9,9 @@ class FunnelAnalyticsCampaignPerformanceChart extends ChartWidget
 {
     protected static ?int $sort = 5;
 
-    protected static ?string $heading = 'Job-Performance';
+    protected ?string $heading = 'Job-Performance';
 
-    protected static ?string $description = 'Konversionen und Einstellungen je Job.';
+    protected ?string $description = 'Konversionen und Einstellungen je Job.';
 
     protected int | string | array $columnSpan = 'full';
 
@@ -105,4 +105,3 @@ class FunnelAnalyticsCampaignPerformanceChart extends ChartWidget
         ];
     }
 }
-

@@ -6,6 +6,7 @@ use App\Filament\Resources\OrganizationResource\Pages\EditOrganization;
 use App\Models\Organization;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -36,8 +37,16 @@ class OrganizationMessageTemplateSettingsTest extends TestCase
             ],
         ];
 
+        $editorState = array_map(
+            static fn (array $template): array => [
+                ...$template,
+                'body_html' => RichContentRenderer::make($template['body_html'])->toArray(),
+            ],
+            $templates,
+        );
+
         Livewire::test(EditOrganization::class, ['record' => $organization->getRouteKey()])
-            ->set('data.application_status_message_templates', $templates)
+            ->set('data.application_status_message_templates', $editorState)
             ->call('save')
             ->assertHasNoErrors();
 

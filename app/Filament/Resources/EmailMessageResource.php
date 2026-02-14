@@ -8,7 +8,7 @@ use App\Models\EmailMessageEvent;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -21,9 +21,9 @@ class EmailMessageResource extends Resource
 {
     protected static ?string $model = EmailMessage::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-envelope';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-envelope';
 
-    protected static ?string $navigationGroup = 'Verwaltung';
+    protected static string|\UnitEnum|null $navigationGroup = 'Verwaltung';
 
     protected static ?string $navigationLabel = 'E-Mail Log';
 
@@ -35,9 +35,9 @@ class EmailMessageResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([]);
+        return $schema->schema([]);
     }
 
     public static function table(Table $table): Table

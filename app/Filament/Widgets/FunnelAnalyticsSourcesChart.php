@@ -9,9 +9,9 @@ class FunnelAnalyticsSourcesChart extends ChartWidget
 {
     protected static ?int $sort = 3;
 
-    protected static ?string $heading = 'Quellen-Performance';
+    protected ?string $heading = 'Quellen-Performance';
 
-    protected static ?string $description = 'Aufrufe und Bewerbungen je Quelle.';
+    protected ?string $description = 'Aufrufe und Bewerbungen je Quelle.';
 
     protected int | string | array $columnSpan = 1;
 
@@ -82,4 +82,3 @@ class FunnelAnalyticsSourcesChart extends ChartWidget
         ];
     }
 }
-

@@ -23,9 +23,9 @@ use Illuminate\Support\Collection;
 
 class FunnelAnalytics extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static ?string $navigationGroup = 'Bewerbungsmanagement';
+    protected static string|\UnitEnum|null $navigationGroup = 'Bewerbungsmanagement';
 
     protected static ?string $navigationLabel = 'Analyse-Dashboard';
 
@@ -33,7 +33,7 @@ class FunnelAnalytics extends Page
 
     protected static ?int $navigationSort = 30;
 
-    protected static string $view = 'filament.pages.funnel-analytics';
+    protected string $view = 'filament.pages.funnel-analytics';
 
     public int | string | null $campaignId = null;
 
@@ -53,7 +53,7 @@ class FunnelAnalytics extends Page
         ];
     }
 
-    public function getFooterWidgetsColumns(): int | string | array
+    public function getFooterWidgetsColumns(): int | array
     {
         return [
             'md' => 2,

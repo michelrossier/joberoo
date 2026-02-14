@@ -11,9 +11,9 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Validation\ValidationException;
 
@@ -42,7 +42,7 @@ class ViewApplication extends ViewRecord
             Actions\Action::make('submit_evaluation')
                 ->label('Bewertung erfassen')
                 ->icon('heroicon-o-clipboard-document-check')
-                ->mountUsing(function (Form $form): void {
+                ->mountUsing(function (Schema $form): void {
                     /** @var Application $record */
                     $record = $this->getRecord();
                     $existingEvaluation = $record->evaluations()

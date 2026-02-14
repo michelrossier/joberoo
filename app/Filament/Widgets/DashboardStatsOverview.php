@@ -13,7 +13,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
 {
     protected static ?int $sort = 1;
 
-    protected static ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '60s';
 
     protected int | string | array $columnSpan = 'full';
 
@@ -93,4 +93,3 @@ class DashboardStatsOverview extends StatsOverviewWidget
         ];
     }
 }
-
