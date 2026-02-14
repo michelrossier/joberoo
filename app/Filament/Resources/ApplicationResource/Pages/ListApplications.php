@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Notifications\ApplicationStatusMessageNotification;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification as FilamentNotification;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
@@ -282,6 +283,19 @@ class ListApplications extends Page
             : (string) $application->status;
 
         if ($currentStatus === $newStatus) {
+            return false;
+        }
+
+        if (
+            Application::statusRequiresEvaluation($newStatus)
+            && ! $application->hasCompleteEvaluation()
+        ) {
+            FilamentNotification::make()
+                ->danger()
+                ->title('Bewertung erforderlich')
+                ->body('Vor finalen Entscheidungen ist eine vollstaendige Stage-Bewertung mit Begruendung und Leitfragen noetig.')
+                ->send();
+
             return false;
         }
 

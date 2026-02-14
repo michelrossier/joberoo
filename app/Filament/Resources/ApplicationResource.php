@@ -250,7 +250,14 @@ class ApplicationResource extends Resource
         $tenant = Filament::getTenant();
 
         return parent::getEloquentQuery()
-            ->with(['campaign', 'assignedUser', 'resumeAttachment', 'coverLetterAttachment', 'activities.actor'])
+            ->with([
+                'campaign.scorecardCompetencies',
+                'assignedUser',
+                'resumeAttachment',
+                'coverLetterAttachment',
+                'activities.actor',
+                'evaluations.evaluator',
+            ])
             ->when($tenant, function (Builder $query) use ($tenant) {
                 $query->whereHas('campaign', fn (Builder $campaignQuery) => $campaignQuery->where('organization_id', $tenant->id));
             });

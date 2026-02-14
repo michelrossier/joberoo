@@ -8,6 +8,8 @@ use App\Models\Campaign;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -77,6 +79,91 @@ class CampaignResource extends Resource
                     ->label('Beschreibung')
                     ->required()
                     ->rows(6)
+                    ->columnSpanFull(),
+                Section::make('Scorecard')
+                    ->description('Definieren Sie die Bewertungskriterien fuer Interviews und finale Entscheidungen.')
+                    ->schema([
+                        Repeater::make('scorecardCompetencies')
+                            ->label('Kompetenzen')
+                            ->relationship()
+                            ->orderColumn('position')
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Kompetenz')
+                                    ->required()
+                                    ->maxLength(120),
+                                TextInput::make('weight')
+                                    ->label('Gewichtung')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(10)
+                                    ->default(1)
+                                    ->required(),
+                            ])
+                            ->minItems(1)
+                            ->default([
+                                ['name' => 'Fachkompetenz', 'weight' => 3],
+                                ['name' => 'Kommunikation', 'weight' => 2],
+                                ['name' => 'Team-Fit', 'weight' => 1],
+                            ])
+                            ->reorderableWithButtons()
+                            ->collapsed(),
+                    ])
+                    ->columnSpanFull(),
+                Section::make('Interview-Kits pro Stage')
+                    ->description('Leitfragen und Rubrik-Prompts fuer In Bearbeitung und Interview.')
+                    ->schema([
+                        Section::make('Stage: In Bearbeitung')
+                            ->schema([
+                                Textarea::make('evaluation_stage_kits.reviewed.rubric_prompt')
+                                    ->label('Rubrik-Prompt')
+                                    ->rows(3)
+                                    ->default(Campaign::defaultEvaluationStageKits()['reviewed']['rubric_prompt'])
+                                    ->required(),
+                                Repeater::make('evaluation_stage_kits.reviewed.questions')
+                                    ->label('Leitfragen')
+                                    ->default(
+                                        array_map(
+                                            static fn (string $question): array => ['question' => $question],
+                                            Campaign::defaultEvaluationStageKits()['reviewed']['questions']
+                                        )
+                                    )
+                                    ->schema([
+                                        TextInput::make('question')
+                                            ->label('Frage')
+                                            ->required()
+                                            ->maxLength(500),
+                                    ])
+                                    ->reorderableWithButtons()
+                                    ->minItems(1)
+                                    ->collapsed(),
+                            ]),
+                        Section::make('Stage: Interview')
+                            ->schema([
+                                Textarea::make('evaluation_stage_kits.interview.rubric_prompt')
+                                    ->label('Rubrik-Prompt')
+                                    ->rows(3)
+                                    ->default(Campaign::defaultEvaluationStageKits()['interview']['rubric_prompt'])
+                                    ->required(),
+                                Repeater::make('evaluation_stage_kits.interview.questions')
+                                    ->label('Leitfragen')
+                                    ->default(
+                                        array_map(
+                                            static fn (string $question): array => ['question' => $question],
+                                            Campaign::defaultEvaluationStageKits()['interview']['questions']
+                                        )
+                                    )
+                                    ->schema([
+                                        TextInput::make('question')
+                                            ->label('Frage')
+                                            ->required()
+                                            ->maxLength(500),
+                                    ])
+                                    ->reorderableWithButtons()
+                                    ->minItems(1)
+                                    ->collapsed(),
+                            ]),
+                    ])
                     ->columnSpanFull(),
                 TextInput::make('location')
                     ->label('Standort')

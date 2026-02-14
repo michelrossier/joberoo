@@ -8,6 +8,7 @@ use App\Models\Application;
 use App\Models\User;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class EditApplication extends EditRecord
 {
@@ -21,6 +22,17 @@ class EditApplication extends EditRecord
         /** @var Application $record */
         $oldStatus = $record->status instanceof ApplicationStatus ? $record->status->value : (string) $record->status;
         $oldAssignedUserId = $record->assigned_user_id;
+        $newStatus = isset($data['status']) ? (string) $data['status'] : $oldStatus;
+
+        if (
+            $oldStatus !== $newStatus
+            && Application::statusRequiresEvaluation($newStatus)
+            && ! $record->hasCompleteEvaluation()
+        ) {
+            throw ValidationException::withMessages([
+                'data.status' => 'Vor finalen Entscheidungen ist eine vollstaendige Stage-Bewertung mit Begruendung und Leitfragen noetig.',
+            ]);
+        }
 
         $record->update($data);
 

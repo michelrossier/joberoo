@@ -11,8 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withCommands()
-    ->withMiddleware(function (Middleware $middleware) {
-        //
+    ->withMiddleware(function (Middleware $middleware): void {
+        // This app uses Filament auth (/admin/login) and has no generic "login" route.
+        $middleware->redirectGuestsTo('/admin/login');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

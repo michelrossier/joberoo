@@ -15,6 +15,14 @@ class AttachmentDownloadTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_guest_is_redirected_to_filament_login_when_accessing_protected_attachment(): void
+    {
+        $attachment = Attachment::factory()->create();
+
+        $this->get(route('attachments.download', $attachment))
+            ->assertRedirect('/admin/login');
+    }
+
     public function test_super_admin_can_download_attachment_without_membership(): void
     {
         Storage::fake('local');

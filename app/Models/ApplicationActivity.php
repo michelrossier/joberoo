@@ -42,6 +42,7 @@ class ApplicationActivity extends Model
             'applicant_message_sent' => 'Bewerber-Nachricht gesendet',
             'assignment_changed' => 'Zustaendigkeit geaendert',
             'note_added' => 'Notiz hinzugefuegt',
+            'evaluation_submitted' => 'Bewertung erfasst',
             'attachment_downloaded' => 'Anhang heruntergeladen',
             default => $type,
         };
@@ -65,6 +66,8 @@ class ApplicationActivity extends Model
                     'recipient' => 'Empfaenger',
                     'subject' => 'Betreff',
                     'template' => 'Vorlage',
+                    'stage' => 'Stage',
+                    'overall_score' => 'Gesamtscore',
                     'status_to' => 'Status (Label)',
                     'status_to_value' => 'Status (Wert)',
                     'from_value' => 'Von (Wert)',

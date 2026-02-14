@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 
 class Application extends Model
 {
@@ -54,6 +55,11 @@ class Application extends Model
         return $this->hasMany(ApplicationActivity::class)->latest('created_at');
     }
 
+    public function evaluations(): HasMany
+    {
+        return $this->hasMany(ApplicationEvaluation::class)->latest('created_at');
+    }
+
     public function resumeAttachment(): HasOne
     {
         return $this->hasOne(Attachment::class)->where('type', 'resume');
@@ -86,5 +92,61 @@ class Application extends Model
     public function getSourceLabelAttribute(): string
     {
         return filled($this->source) ? $this->source : 'Direkt';
+    }
+
+    public static function statusRequiresEvaluation(string $status): bool
+    {
+        return in_array($status, [
+            ApplicationStatus::Accepted->value,
+            ApplicationStatus::Dismissed->value,
+        ], true);
+    }
+
+    /**
+     * @return Collection<int, CampaignScorecardCompetency>
+     */
+    public function getScorecardCompetencies(): Collection
+    {
+        $campaign = $this->relationLoaded('campaign')
+            ? $this->campaign
+            : $this->campaign()->with('scorecardCompetencies')->first();
+
+        if (! $campaign) {
+            return collect();
+        }
+
+        if ($campaign->relationLoaded('scorecardCompetencies')) {
+            return $campaign->scorecardCompetencies;
+        }
+
+        return $campaign->scorecardCompetencies()->get();
+    }
+
+    public function hasCompleteEvaluation(): bool
+    {
+        $competencies = $this->getScorecardCompetencies();
+
+        if ($competencies->isEmpty()) {
+            return false;
+        }
+
+        $stageKits = $this->campaign?->getEvaluationStageKitsOrDefault()
+            ?? $this->campaign()->first()?->getEvaluationStageKitsOrDefault()
+            ?? [];
+
+        $evaluations = $this->relationLoaded('evaluations')
+            ? $this->evaluations
+            : $this->evaluations()->get();
+
+        return $evaluations->contains(function (ApplicationEvaluation $evaluation) use ($competencies, $stageKits): bool {
+            $stage = (string) ($evaluation->stage ?? '');
+            $requiredQuestions = collect($stageKits[$stage]['questions'] ?? [])
+                ->map(fn (mixed $question): string => trim((string) $question))
+                ->filter(fn (string $question): bool => $question !== '')
+                ->values()
+                ->all();
+
+            return $evaluation->isCompleteForCompetencies($competencies, $requiredQuestions);
+        });
     }
 }

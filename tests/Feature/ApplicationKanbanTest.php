@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Enums\ApplicationStatus;
 use App\Filament\Resources\ApplicationResource\Pages\ListApplications;
 use App\Models\Application;
+use App\Models\ApplicationEvaluation;
 use App\Models\Campaign;
+use App\Models\CampaignScorecardCompetency;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\ApplicationStatusMessageNotification;
@@ -181,6 +183,35 @@ class ApplicationKanbanTest extends TestCase
             'status' => ApplicationStatus::New,
             'email' => 'applicant@example.com',
         ]);
+        $competency = CampaignScorecardCompetency::query()->create([
+            'campaign_id' => $campaign->id,
+            'name' => 'Fachkompetenz',
+            'weight' => 3,
+            'position' => 0,
+        ]);
+        ApplicationEvaluation::query()->create([
+            'application_id' => $application->id,
+            'evaluator_id' => $recruiter->id,
+            'stage' => ApplicationStatus::Reviewed->value,
+            'scores' => [
+                (string) $competency->id => 4,
+            ],
+            'question_responses' => [
+                [
+                    'question' => 'Welche Staerken sehen Sie bezogen auf die Kernanforderungen?',
+                    'answer' => 'Gute fachliche Basis und klare Beispiele.',
+                ],
+                [
+                    'question' => 'Wo sehen Sie moegliche Risiken oder offene Punkte?',
+                    'answer' => 'Leichte Luecke bei Stakeholder-Kommunikation.',
+                ],
+                [
+                    'question' => 'Welche Evidenz aus Unterlagen/Screening stuetzt Ihre Einschaetzung?',
+                    'answer' => 'Lebenslauf und Screening-Call zeigen relevante Projekterfahrung.',
+                ],
+            ],
+            'rationale' => 'Klares Match fuer die Rolle.',
+        ]);
 
         Livewire::test(ListApplications::class)
             ->call('mountAction', 'statusTransition', [
@@ -208,6 +239,85 @@ class ApplicationKanbanTest extends TestCase
         ]);
 
         Notification::assertNothingSent();
+    }
+
+    public function test_final_status_transition_requires_complete_evaluation(): void
+    {
+        Notification::fake();
+
+        [$organization, $recruiter] = $this->authenticateRecruiterForTenant();
+
+        $campaign = Campaign::factory()->create([
+            'organization_id' => $organization->id,
+        ]);
+        $application = Application::factory()->create([
+            'campaign_id' => $campaign->id,
+            'status' => ApplicationStatus::Interview,
+        ]);
+
+        $competencyA = CampaignScorecardCompetency::query()->create([
+            'campaign_id' => $campaign->id,
+            'name' => 'Fachkompetenz',
+            'weight' => 3,
+            'position' => 0,
+        ]);
+        $competencyB = CampaignScorecardCompetency::query()->create([
+            'campaign_id' => $campaign->id,
+            'name' => 'Kommunikation',
+            'weight' => 2,
+            'position' => 1,
+        ]);
+
+        Livewire::test(ListApplications::class)
+            ->call('mountAction', 'statusTransition', [
+                'applicationId' => $application->id,
+                'newStatus' => ApplicationStatus::Accepted->value,
+            ])
+            ->set('mountedActionsData.0.send_message', 0)
+            ->call('callMountedAction');
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $application->id,
+            'status' => ApplicationStatus::Interview->value,
+        ]);
+
+        ApplicationEvaluation::query()->create([
+            'application_id' => $application->id,
+            'evaluator_id' => $recruiter->id,
+            'stage' => ApplicationStatus::Reviewed->value,
+            'scores' => [
+                (string) $competencyA->id => 5,
+                (string) $competencyB->id => 4,
+            ],
+            'question_responses' => [
+                [
+                    'question' => 'Welche Staerken sehen Sie bezogen auf die Kernanforderungen?',
+                    'answer' => 'Sehr gute Problemloesung und Priorisierung.',
+                ],
+                [
+                    'question' => 'Wo sehen Sie moegliche Risiken oder offene Punkte?',
+                    'answer' => 'Onboarding in neue Toolchain kann etwas dauern.',
+                ],
+                [
+                    'question' => 'Welche Evidenz aus Unterlagen/Screening stuetzt Ihre Einschaetzung?',
+                    'answer' => 'Konkrete Projektergebnisse im Screening vorgestellt.',
+                ],
+            ],
+            'rationale' => 'Starke, konsistente Signale aus dem Interview.',
+        ]);
+
+        Livewire::test(ListApplications::class)
+            ->call('mountAction', 'statusTransition', [
+                'applicationId' => $application->id,
+                'newStatus' => ApplicationStatus::Accepted->value,
+            ])
+            ->set('mountedActionsData.0.send_message', 0)
+            ->call('callMountedAction');
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $application->id,
+            'status' => ApplicationStatus::Accepted->value,
+        ]);
     }
 
     public function test_status_transition_action_prefills_default_template_when_organization_has_none(): void
