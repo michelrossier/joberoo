@@ -8,14 +8,15 @@ use App\Models\EmailMessageEvent;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 class EmailMessageResource extends Resource
 {
@@ -59,7 +60,8 @@ class EmailMessageResource extends Resource
                     ->label('Status')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => EmailMessage::labelForStatus($state))
-                    ->color(fn (string $state): string => EmailMessage::colorForStatus($state)),
+                    ->color(fn (string $state): string => EmailMessage::colorForStatus($state))
+                    ->tooltip(static fn (EmailMessage $record): ?Htmlable => self::formatStatusTooltip($record)),
                 TextColumn::make('organization.name')
                     ->label('Organisation')
                     ->placeholder('-')
@@ -126,6 +128,25 @@ class EmailMessageResource extends Resource
             ->actions([])
             ->bulkActions([])
             ->defaultSort('sent_at', 'desc');
+    }
+
+    private static function formatStatusTooltip(EmailMessage $record): ?Htmlable
+    {
+        $history = $record->statusHistory();
+
+        if ($history === []) {
+            return null;
+        }
+
+        $lines = collect($history)
+            ->map(static fn (array $entry): string => sprintf(
+                '%s: %s',
+                e($entry['label']),
+                e($entry['occurred_at']->format('d.m.Y H:i:s'))
+            ))
+            ->implode('<br>');
+
+        return new HtmlString($lines);
     }
 
     public static function getEloquentQuery(): Builder

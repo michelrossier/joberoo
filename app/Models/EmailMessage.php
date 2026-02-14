@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -139,5 +140,53 @@ class EmailMessage extends Model
     public function getStatusLabelAttribute(): string
     {
         return self::labelForStatus((string) $this->status);
+    }
+
+    /**
+     * @return array<int, array{status: string, label: string, occurred_at: CarbonInterface}>
+     */
+    public function statusHistory(): array
+    {
+        $entries = [];
+
+        $this->appendStatusHistoryEntry($entries, self::STATUS_SENT, $this->sent_at);
+        $this->appendStatusHistoryEntry($entries, self::STATUS_DELIVERED, $this->delivered_at);
+        $this->appendStatusHistoryEntry($entries, self::STATUS_OPENED, $this->first_opened_at);
+        $this->appendStatusHistoryEntry($entries, self::STATUS_BOUNCED, $this->bounced_at);
+        $this->appendStatusHistoryEntry($entries, self::STATUS_SPAM_COMPLAINT, $this->spam_reported_at);
+
+        if ((string) $this->status === self::STATUS_FAILED) {
+            $this->appendStatusHistoryEntry($entries, self::STATUS_FAILED, $this->last_event_at ?? $this->updated_at);
+        }
+
+        if ($entries === []) {
+            $this->appendStatusHistoryEntry(
+                $entries,
+                (string) $this->status,
+                $this->last_event_at ?? $this->updated_at ?? $this->created_at
+            );
+        }
+
+        usort($entries, static function (array $left, array $right): int {
+            return $left['occurred_at']->getTimestamp() <=> $right['occurred_at']->getTimestamp();
+        });
+
+        return $entries;
+    }
+
+    /**
+     * @param  array<int, array{status: string, label: string, occurred_at: CarbonInterface}>  $entries
+     */
+    private function appendStatusHistoryEntry(array &$entries, string $status, mixed $occurredAt): void
+    {
+        if (! $occurredAt instanceof CarbonInterface) {
+            return;
+        }
+
+        $entries[] = [
+            'status' => $status,
+            'label' => self::labelForStatus($status),
+            'occurred_at' => $occurredAt,
+        ];
     }
 }
