@@ -241,6 +241,53 @@ class ApplicationKanbanTest extends TestCase
         Notification::assertNothingSent();
     }
 
+    public function test_status_transition_action_can_still_send_mail_if_status_is_already_at_target(): void
+    {
+        Notification::fake();
+
+        [$organization, $recruiter] = $this->authenticateRecruiterForTenant();
+
+        $campaign = Campaign::factory()->create([
+            'organization_id' => $organization->id,
+        ]);
+
+        $application = Application::factory()->create([
+            'campaign_id' => $campaign->id,
+            'status' => ApplicationStatus::Interview,
+            'email' => 'applicant@example.com',
+        ]);
+
+        Livewire::test(ListApplications::class)
+            ->call('mountAction', 'statusTransition', [
+                'applicationId' => $application->id,
+                'newStatus' => ApplicationStatus::Interview->value,
+            ])
+            ->set('mountedActionsData.0.send_message', 1)
+            ->set('mountedActionsData.0.template_key', '0')
+            ->set('mountedActionsData.0.subject', 'Kurzes Update zu Ihrer Bewerbung')
+            ->set('mountedActionsData.0.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
+            ->call('callMountedAction');
+
+        $this->assertDatabaseMissing('application_activities', [
+            'application_id' => $application->id,
+            'actor_id' => $recruiter->id,
+            'type' => 'status_changed',
+        ]);
+        $this->assertDatabaseHas('application_activities', [
+            'application_id' => $application->id,
+            'actor_id' => $recruiter->id,
+            'type' => 'applicant_message_sent',
+        ]);
+
+        Notification::assertSentOnDemand(
+            ApplicationStatusMessageNotification::class,
+            function (ApplicationStatusMessageNotification $notification, array $channels, object $notifiable): bool {
+                return ($notifiable->routes['mail'] ?? null) === 'applicant@example.com'
+                    && $notification->subjectLine === 'Kurzes Update zu Ihrer Bewerbung';
+            }
+        );
+    }
+
     public function test_final_status_transition_requires_complete_evaluation(): void
     {
         Notification::fake();

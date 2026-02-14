@@ -161,32 +161,50 @@ class ListApplications extends Page
                     return;
                 }
 
-                if (! $this->applyStatusChange($application, $newStatus)) {
-                    return;
-                }
-
                 $forceWithoutMessage = (bool) ($arguments['force_without_message'] ?? false);
                 $sendMessage = ! $forceWithoutMessage && (int) ($data['send_message'] ?? 0) === 1;
 
-                if (! $sendMessage) {
+                $template = null;
+                $subject = '';
+                $messageHtml = '';
+
+                if ($sendMessage) {
+                    if (blank(trim((string) $application->email))) {
+                        throw ValidationException::withMessages([
+                            'send_message' => 'Keine Empfaenger-E-Mail hinterlegt.',
+                        ]);
+                    }
+
+                    $validated = Validator::make($data, [
+                        'template_key' => ['required', 'string'],
+                        'subject' => ['required', 'string', 'max:255'],
+                        'message_html' => ['required', 'string'],
+                    ])->validate();
+
+                    $templateKey = (string) $validated['template_key'];
+                    $template = $this->resolveMessageTemplate($templateKey);
+                    $subject = trim((string) $validated['subject']);
+                    $messageHtml = (string) $validated['message_html'];
+
+                    if (blank(trim(strip_tags($messageHtml)))) {
+                        throw ValidationException::withMessages([
+                            'message_html' => 'Die Nachricht darf nicht leer sein.',
+                        ]);
+                    }
+                }
+
+                $currentStatus = $application->status instanceof ApplicationStatus
+                    ? $application->status->value
+                    : (string) $application->status;
+                $isAlreadyAtTargetStatus = $currentStatus === $newStatus;
+                $statusChanged = $this->applyStatusChange($application, $newStatus);
+
+                if (! $statusChanged && ! $isAlreadyAtTargetStatus) {
                     return;
                 }
 
-                $validated = Validator::make($data, [
-                    'template_key' => ['required', 'string'],
-                    'subject' => ['required', 'string', 'max:255'],
-                    'message_html' => ['required', 'string'],
-                ])->validate();
-
-                $templateKey = (string) $validated['template_key'];
-                $template = $this->resolveMessageTemplate($templateKey);
-                $subject = trim((string) $validated['subject']);
-                $messageHtml = (string) $validated['message_html'];
-
-                if (blank(trim(strip_tags($messageHtml)))) {
-                    throw ValidationException::withMessages([
-                        'message_html' => 'Die Nachricht darf nicht leer sein.',
-                    ]);
+                if (! $sendMessage) {
+                    return;
                 }
 
                 Notification::route('mail', $application->email)

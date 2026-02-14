@@ -85,11 +85,11 @@ class ApplicationStatusMessageNotification extends Notification implements Shoul
 
     private function resolveActorId(): ?int
     {
-        if (! property_exists($this, 'actorId')) {
+        if (! isset($this->actorId)) {
             return null;
         }
 
-        $actorId = $this->actorId ?? null;
+        $actorId = $this->actorId;
 
         return filled($actorId) ? (int) $actorId : null;
     }
