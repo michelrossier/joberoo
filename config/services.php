@@ -16,6 +16,9 @@ return [
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
+        'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID', 'outbound'),
+        'webhook_basic_user' => env('POSTMARK_WEBHOOK_BASIC_USER'),
+        'webhook_basic_pass' => env('POSTMARK_WEBHOOK_BASIC_PASS'),
     ],
 
     'ses' => [

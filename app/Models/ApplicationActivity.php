@@ -40,6 +40,10 @@ class ApplicationActivity extends Model
             'submitted' => 'Bewerbung eingegangen',
             'status_changed' => 'Status geaendert',
             'applicant_message_sent' => 'Bewerber-Nachricht gesendet',
+            'email_delivered' => 'E-Mail zugestellt',
+            'email_opened' => 'E-Mail geoeffnet',
+            'email_bounced' => 'E-Mail Bounce',
+            'email_spam_reported' => 'Spam-Beschwerde',
             'assignment_changed' => 'Zustaendigkeit geaendert',
             'note_added' => 'Notiz hinzugefuegt',
             'evaluation_submitted' => 'Bewertung erfasst',
@@ -72,6 +76,9 @@ class ApplicationActivity extends Model
                     'status_to_value' => 'Status (Wert)',
                     'from_value' => 'Von (Wert)',
                     'to_value' => 'Nach (Wert)',
+                    'provider_message_id' => 'Postmark Message ID',
+                    'event_at' => 'Eventzeit',
+                    'details' => 'Details',
                     default => (string) $key,
                 };
 

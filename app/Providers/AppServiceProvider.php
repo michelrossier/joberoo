@@ -9,11 +9,14 @@ use App\Models\Campaign;
 use App\Models\User;
 use App\Observers\AuditableObserver;
 use App\Support\AuditLogger;
+use App\Support\MailTracking\OutboundMailLogger;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Events\NotificationFailed;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -47,6 +50,14 @@ class AppServiceProvider extends ServiceProvider
             }
 
             app(AuditLogger::class)->logAuth(AuditLog::EVENT_AUTH_LOGOUT, $event->user);
+        });
+
+        Event::listen(NotificationSent::class, function (NotificationSent $event): void {
+            app(OutboundMailLogger::class)->handleSent($event);
+        });
+
+        Event::listen(NotificationFailed::class, function (NotificationFailed $event): void {
+            app(OutboundMailLogger::class)->handleFailed($event);
         });
 
         Campaign::observe(AuditableObserver::class);
