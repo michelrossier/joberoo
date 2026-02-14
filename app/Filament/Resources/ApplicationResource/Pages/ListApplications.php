@@ -190,7 +190,12 @@ class ListApplications extends Page
                 }
 
                 Notification::route('mail', $application->email)
-                    ->notify(new ApplicationStatusMessageNotification($subject, $messageHtml));
+                    ->notify(new ApplicationStatusMessageNotification(
+                        $subject,
+                        $messageHtml,
+                        $application,
+                        auth()->id(),
+                    ));
 
                 $application->recordActivity('applicant_message_sent', null, [
                     'recipient' => $application->email,

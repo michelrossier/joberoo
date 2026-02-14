@@ -11,7 +11,9 @@
         "laravel/framework": "^12.0",
         "laravel/nightwatch": "^1.22",
         "laravel/tinker": "^2.10.1",
-        "pxlrbt/filament-excel": "^2.5"
+        "pxlrbt/filament-excel": "^2.5",
+        "symfony/http-client": "*",
+        "symfony/postmark-mailer": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
