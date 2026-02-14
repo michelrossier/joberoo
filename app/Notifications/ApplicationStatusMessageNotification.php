@@ -12,12 +12,15 @@ class ApplicationStatusMessageNotification extends Notification implements Shoul
 {
     use Queueable;
 
+    public ?int $applicationId = null;
+
     public function __construct(
         public string $subjectLine,
         public string $messageHtml,
         public Application $application,
         public ?int $actorId = null,
     ) {
+        $this->applicationId = $application->id;
     }
 
     public function via(object $notifiable): array
@@ -27,18 +30,26 @@ class ApplicationStatusMessageNotification extends Notification implements Shoul
 
     public function toMail(object $notifiable): MailMessage
     {
-        $campaign = $this->application->relationLoaded('campaign')
-            ? $this->application->campaign
-            : $this->application->campaign()->first();
+        $application = $this->resolveApplication();
+        $actorId = $this->resolveActorId();
+        $campaign = $application
+            ? ($application->relationLoaded('campaign')
+                ? $application->campaign
+                : $application->campaign()->first())
+            : null;
 
         $mailMessage = (new MailMessage)
             ->subject($this->subjectLine)
             ->view('emails.applications.status-message', [
                 'messageHtml' => $this->messageHtml,
             ])
-            ->tag('application-status')
-            ->metadata('application_id', (string) $this->application->id)
-            ->metadata('campaign_id', (string) ($campaign?->id ?? $this->application->campaign_id));
+            ->tag('application-status');
+
+        if ($application) {
+            $mailMessage
+                ->metadata('application_id', (string) $application->id)
+                ->metadata('campaign_id', (string) ($campaign?->id ?? $application->campaign_id));
+        }
 
         if ($this->id) {
             $mailMessage->metadata('notification_id', (string) $this->id);
@@ -48,10 +59,38 @@ class ApplicationStatusMessageNotification extends Notification implements Shoul
             $mailMessage->metadata('organization_id', (string) $campaign->organization_id);
         }
 
-        if ($this->actorId) {
-            $mailMessage->metadata('actor_id', (string) $this->actorId);
+        if ($actorId) {
+            $mailMessage->metadata('actor_id', (string) $actorId);
         }
 
         return $mailMessage;
+    }
+
+    private function resolveApplication(): ?Application
+    {
+        if (isset($this->application) && $this->application instanceof Application) {
+            return $this->application;
+        }
+
+        $applicationId = $this->applicationId;
+
+        if (! filled($applicationId)) {
+            return null;
+        }
+
+        return Application::query()
+            ->with('campaign')
+            ->find((int) $applicationId);
+    }
+
+    private function resolveActorId(): ?int
+    {
+        if (! property_exists($this, 'actorId')) {
+            return null;
+        }
+
+        $actorId = $this->actorId ?? null;
+
+        return filled($actorId) ? (int) $actorId : null;
     }
 }

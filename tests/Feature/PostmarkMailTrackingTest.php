@@ -104,6 +104,34 @@ class PostmarkMailTrackingTest extends TestCase
         ]);
     }
 
+    public function test_legacy_status_notification_payload_without_application_context_still_sends(): void
+    {
+        /** @var ApplicationStatusMessageNotification $notification */
+        $notification = (new \ReflectionClass(ApplicationStatusMessageNotification::class))
+            ->newInstanceWithoutConstructor();
+        $notification->subjectLine = 'Legacy Bewerbungs-Update';
+        $notification->messageHtml = '<p>Bitte melden Sie sich bei Fragen.</p>';
+        $notification->id = 'legacy-status-notif-1';
+
+        $notifiable = new AnonymousNotifiable;
+        $notifiable->route('mail', 'candidate@example.com');
+
+        event(new NotificationSent(
+            $notifiable,
+            $notification,
+            'mail',
+            $this->fakeSentResponse('pm-legacy-1', 'Legacy Bewerbungs-Update'),
+        ));
+
+        $this->assertDatabaseHas('email_messages', [
+            'notification_id' => 'legacy-status-notif-1',
+            'notification_type' => ApplicationStatusMessageNotification::class,
+            'recipient_email' => 'candidate@example.com',
+            'provider_message_id' => 'pm-legacy-1',
+            'status' => EmailMessage::STATUS_SENT,
+        ]);
+    }
+
     public function test_delivery_webhook_updates_message_and_writes_application_activity(): void
     {
         [, , $application] = $this->createApplicationContext();

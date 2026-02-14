@@ -326,8 +326,10 @@ class OutboundMailLogger
         $actorId = null;
 
         if ($notification instanceof ApplicationStatusMessageNotification) {
-            $application = $notification->application;
-            $actorId = $notification->actorId;
+            $application = $this->resolveApplicationFromStatusNotification($notification);
+            $actorId = property_exists($notification, 'actorId')
+                ? ($notification->actorId ?? null)
+                : null;
         } elseif ($notification instanceof NewApplicationNotification) {
             $application = $notification->application;
         } elseif (property_exists($notification, 'application') && $notification->application instanceof Application) {
@@ -376,5 +378,25 @@ class OutboundMailLogger
             ->where('recipient_email', $recipientEmail)
             ->latest('id')
             ->first();
+    }
+
+    private function resolveApplicationFromStatusNotification(
+        ApplicationStatusMessageNotification $notification,
+    ): ?Application {
+        if (property_exists($notification, 'application') && isset($notification->application) && $notification->application instanceof Application) {
+            return $notification->application;
+        }
+
+        $applicationId = property_exists($notification, 'applicationId')
+            ? ($notification->applicationId ?? null)
+            : null;
+
+        if (! filled($applicationId)) {
+            return null;
+        }
+
+        return Application::query()
+            ->with('campaign')
+            ->find((int) $applicationId);
     }
 }
