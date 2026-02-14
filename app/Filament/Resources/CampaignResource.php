@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Enums\CampaignStatus;
 use App\Filament\Resources\CampaignResource\Pages;
 use App\Models\Campaign;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
@@ -256,14 +258,14 @@ class CampaignResource extends Resource
                         ->all()),
             ])
             ->actions([
-                Tables\Actions\Action::make('open_public_job')
+                Action::make('open_public_job')
                     ->label('Job-URL')
                     ->icon('heroicon-o-arrow-top-right-on-square')
                     ->visible(fn (Campaign $record): bool => filled(static::getPublicJobUrl($record)))
                     ->url(function (Campaign $record): ?string {
                         return static::getPublicJobUrl($record);
                     }, shouldOpenInNewTab: true),
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
             ]);
     }
 
