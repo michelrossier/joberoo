@@ -216,6 +216,12 @@ class ListApplications extends Page
                     'status_to' => ApplicationStatus::tryFrom($newStatus)?->label() ?? $newStatus,
                     'status_to_value' => $newStatus,
                 ], auth()->id());
+
+                FilamentNotification::make()
+                    ->success()
+                    ->title('Nachricht gesendet')
+                    ->body('Die Bewerber-Nachricht wurde erfolgreich gesendet.')
+                    ->send();
             });
     }
 
