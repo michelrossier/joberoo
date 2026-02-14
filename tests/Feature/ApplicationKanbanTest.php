@@ -11,6 +11,7 @@ use App\Models\CampaignScorecardCompetency;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\ApplicationStatusMessageNotification;
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -99,7 +100,7 @@ class ApplicationKanbanTest extends TestCase
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Reviewed->value,
             ])
-            ->set('mountedActionsData.0.send_message', 0)
+            ->set('mountedActions.0.data.send_message', 0)
             ->call('callMountedAction');
 
         $this->assertDatabaseHas('applications', [
@@ -140,10 +141,10 @@ class ApplicationKanbanTest extends TestCase
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Interview->value,
             ])
-            ->set('mountedActionsData.0.send_message', 1)
-            ->set('mountedActionsData.0.template_key', '0')
-            ->set('mountedActionsData.0.subject', 'Kurzes Update zu Ihrer Bewerbung')
-            ->set('mountedActionsData.0.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
+            ->set('mountedActions.0.data.send_message', 1)
+            ->set('mountedActions.0.data.template_key', '0')
+            ->set('mountedActions.0.data.subject', 'Kurzes Update zu Ihrer Bewerbung')
+            ->set('mountedActions.0.data.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
             ->call('callMountedAction');
 
         $this->assertDatabaseHas('applications', [
@@ -220,9 +221,9 @@ class ApplicationKanbanTest extends TestCase
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Dismissed->value,
             ])
-            ->set('mountedActionsData.0.send_message', 1)
-            ->set('mountedActionsData.0.subject', '')
-            ->set('mountedActionsData.0.message_html', '')
+            ->set('mountedActions.0.data.send_message', 1)
+            ->set('mountedActions.0.data.subject', '')
+            ->set('mountedActions.0.data.message_html', '')
             ->call('callMountedAction', ['force_without_message' => true]);
 
         $this->assertDatabaseHas('applications', [
@@ -264,10 +265,10 @@ class ApplicationKanbanTest extends TestCase
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Interview->value,
             ])
-            ->set('mountedActionsData.0.send_message', 1)
-            ->set('mountedActionsData.0.template_key', '0')
-            ->set('mountedActionsData.0.subject', 'Kurzes Update zu Ihrer Bewerbung')
-            ->set('mountedActionsData.0.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
+            ->set('mountedActions.0.data.send_message', 1)
+            ->set('mountedActions.0.data.template_key', '0')
+            ->set('mountedActions.0.data.subject', 'Kurzes Update zu Ihrer Bewerbung')
+            ->set('mountedActions.0.data.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
             ->call('callMountedAction');
 
         $this->assertDatabaseMissing('application_activities', [
@@ -311,10 +312,10 @@ class ApplicationKanbanTest extends TestCase
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Interview->value,
             ])
-            ->set('mountedActionsData.0.send_message', 1)
-            ->set('mountedActionsData.0.template_key', '0')
-            ->set('mountedActionsData.0.subject', 'Kurzes Update zu Ihrer Bewerbung')
-            ->set('mountedActionsData.0.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
+            ->set('mountedActions.0.data.send_message', 1)
+            ->set('mountedActions.0.data.template_key', '0')
+            ->set('mountedActions.0.data.subject', 'Kurzes Update zu Ihrer Bewerbung')
+            ->set('mountedActions.0.data.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
             ->call('callMountedAction');
 
         Queue::assertPushed(SendQueuedNotifications::class, function (SendQueuedNotifications $job) use ($application): bool {
@@ -356,7 +357,7 @@ class ApplicationKanbanTest extends TestCase
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Accepted->value,
             ])
-            ->set('mountedActionsData.0.send_message', 0)
+            ->set('mountedActions.0.data.send_message', 0)
             ->call('callMountedAction');
 
         $this->assertDatabaseHas('applications', [
@@ -394,7 +395,7 @@ class ApplicationKanbanTest extends TestCase
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Accepted->value,
             ])
-            ->set('mountedActionsData.0.send_message', 0)
+            ->set('mountedActions.0.data.send_message', 0)
             ->call('callMountedAction');
 
         $this->assertDatabaseHas('applications', [
@@ -423,10 +424,13 @@ class ApplicationKanbanTest extends TestCase
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Reviewed->value,
             ])
-            ->assertSet('mountedActionsData.0.subject', 'Vielen Dank fuer Ihre Bewerbung')
-            ->assertSet('mountedActionsData.0.send_message', 0);
+            ->assertSet('mountedActions.0.data.subject', 'Vielen Dank fuer Ihre Bewerbung')
+            ->assertSet('mountedActions.0.data.send_message', 0);
 
-        $messageHtml = (string) data_get($component->get('mountedActionsData'), '0.message_html');
+        $messageState = data_get($component->get('mountedActions'), '0.data.message_html');
+        $messageHtml = is_array($messageState)
+            ? RichContentRenderer::make($messageState)->toHtml()
+            : (string) $messageState;
 
         $this->assertStringContainsString('Guten Tag Max Mustermann', $messageHtml);
     }

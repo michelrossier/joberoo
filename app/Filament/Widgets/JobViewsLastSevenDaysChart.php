@@ -11,15 +11,15 @@ use Illuminate\Support\Collection;
 
 class JobViewsLastSevenDaysChart extends ChartWidget
 {
-    protected static ?string $heading = 'Job-Aufrufe je Job (letzte 7 Tage)';
+    protected ?string $heading = 'Job-Aufrufe je Job (letzte 7 Tage)';
 
     protected static ?int $sort = 2;
 
-    protected static ?string $maxHeight = '360px';
+    protected ?string $maxHeight = '360px';
 
     protected int | string | array $columnSpan = 'full';
 
-    protected static ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '60s';
 
     protected function getType(): string
     {

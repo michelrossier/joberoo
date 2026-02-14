@@ -1,61 +1,227 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Recruiteroo (Jobfunnel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Multi-tenant recruiting application built with Laravel + Filament.
 
-## About Laravel
+It provides:
+- a public job landing + application flow
+- an internal recruiter/admin panel
+- workflow tooling (kanban, evaluation kits, analytics)
+- audit and email delivery tracking for operational visibility
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## What The Project Does
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Public-facing flow
+- Campaign pages at `/o/{org_slug}/c/{campaign_slug}`
+- Candidate application submission with optional attachments
+- Thank-you page after submission
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Admin/recruiter flow (`/admin`)
+- Multi-tenant panel scoped by `Organization`
+- Campaign, application, user, and organization management
+- Kanban application status transitions with optional applicant messaging
+- Funnel analytics and candidate comparison pages
+- Interview kit + stage-based evaluation workflow
 
-## Learning Laravel
+### Governance and observability
+- Global audit log (`audit_logs`) for auth + model changes
+- Email message log (`email_messages`) with Postmark webhook event ingestion (`email_message_events`)
+- Application activity timeline entries for send/delivery/open/bounce/spam events
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Core Tech Stack
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- `Laravel 12` (backend framework, queues, notifications, Eloquent)
+- `PHP 8.2+`
+- `Filament 5` (admin panel/resources/pages/widgets)
+- `Livewire 4` (interactive Filament pages, kanban, tests)
+- `MySQL` (default in `.env.example`; sqlite also supported for tests/local experiments)
+- `Vite` + `Tailwind CSS v4` + `Axios` (frontend asset pipeline)
+- `Postmark` (`symfony/postmark-mailer`) for transactional email
+- Database queue driver (`jobs` / `failed_jobs`) for async email sends
+- `PHPUnit 11` + `Mockery` for feature tests
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Project Structure
 
-## Laravel Sponsors
+```text
+app/
+  Filament/
+    Resources/                 # CRUD resources (Campaigns, Applications, Users, etc.)
+    Pages/                     # Custom pages (Dashboard, FunnelAnalytics, CandidateCompare)
+    Widgets/                   # Dashboard/analytics widgets
+  Http/
+    Controllers/               # Public campaign flow, webhook controller, downloads
+    Middleware/                # Postmark webhook auth, etc.
+  Models/                      # Domain entities (Organization, Campaign, Application, ...)
+  Notifications/               # Outbound mail notifications
+  Support/
+    AuditLogger.php
+    MailTracking/              # Outbound logger + Postmark webhook processor
+database/
+  migrations/                  # Full schema history
+  seeders/DatabaseSeeder.php   # Bootstraps sample org/admin/campaign
+resources/
+  views/                       # Blade views and email templates
+routes/web.php                 # Public routes + webhook endpoint
+docs/
+  laravel-cloud-queue-workers.md
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Data Model Overview
 
-### Premium Partners
+- `organizations`: tenant boundary
+- `users` + `organization_user`: users belong to one or many organizations with role (`admin` / `recruiter`)
+- `campaigns`: jobs per organization
+- `applications`: candidate applications per campaign
+- `application_activities`: per-application timeline/audit trail
+- `campaign_scorecard_competencies` + `application_evaluations`: stage-based evaluation system
+- `audit_logs`: global immutable super-admin audit history
+- `email_messages` + `email_message_events`: outbound email tracking and webhook events
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
+## Local Setup
 
-## Contributing
+### Prerequisites
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- PHP 8.2+
+- Composer
+- Node.js 20+ and npm
+- MySQL (or sqlite if preferred)
 
-## Code of Conduct
+### 1) Install dependencies
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+composer install
+npm install
+```
 
-## Security Vulnerabilities
+### 2) Configure environment
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-## License
+Edit `.env`:
+- database connection (`DB_*`)
+- app url (`APP_URL`)
+- mail + Postmark settings (if testing transactional mail)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 3) Run migrations and seed
+
+```bash
+php artisan migrate --seed
+```
+
+Seeder creates:
+- organization: `Acme Recruiting` (`acme`)
+- admin user: `admin@example.com`
+- password: `password`
+
+### 4) Start the app
+
+Recommended all-in-one dev command:
+
+```bash
+composer dev
+```
+
+This starts:
+- Laravel HTTP server
+- queue listener
+- log stream (`pail`)
+- Vite dev server
+
+Or run manually:
+
+```bash
+php artisan serve
+php artisan queue:work database --queue=default --sleep=1 --tries=3 --backoff=10 --timeout=120
+npm run dev
+```
+
+## Access URLs
+
+- Public home: `http://localhost:8000/`
+- Filament admin: `http://localhost:8000/admin`
+- Example seeded campaign: `http://localhost:8000/o/acme/c/senior-product-designer`
+
+## Queue And Email Requirements
+
+Application status mails and other notifications are queued.  
+Without a running queue worker, emails will not be sent.
+
+Default queue config:
+- `QUEUE_CONNECTION=database`
+- table: `jobs`
+- failed table: `failed_jobs` (`database-uuids`)
+
+Useful commands:
+
+```bash
+php artisan queue:work database --queue=default --sleep=1 --tries=3 --backoff=10 --timeout=120 --max-time=3600
+php artisan queue:failed
+php artisan queue:retry all
+```
+
+## Temporary Migration Note
+
+During the Filament major-version migration, the applications Excel export action was intentionally disabled.
+
+- Removed from `App\Filament\Resources\ApplicationResource\Pages\ListApplications`
+- Follow-up task: reintroduce export with a Filament 5-compatible implementation
+
+## Postmark Integration
+
+Required env keys:
+- `MAIL_MAILER` (typically `failover`)
+- `POSTMARK_TOKEN`
+- `POSTMARK_MESSAGE_STREAM_ID=outbound`
+- `MAIL_FROM_ADDRESS`
+- `MAIL_FROM_NAME`
+- `POSTMARK_WEBHOOK_BASIC_USER`
+- `POSTMARK_WEBHOOK_BASIC_PASS`
+
+Webhook endpoint:
+- `POST /webhooks/postmark`
+- basic-auth protected via `VerifyPostmarkWebhookBasicAuth`
+
+Tracked events:
+- delivery
+- open
+- bounce
+- spam complaint
+
+## Super Admin Utility Command
+
+Grant super admin:
+
+```bash
+php artisan user:super-admin user@example.com
+```
+
+Revoke super admin:
+
+```bash
+php artisan user:super-admin user@example.com --revoke
+```
+
+## Testing
+
+Run all tests:
+
+```bash
+php artisan test
+```
+
+Run selected suites:
+
+```bash
+php artisan test --filter=ApplicationKanbanTest
+php artisan test --filter=PostmarkMailTrackingTest
+php artisan test --filter=InterviewKitEvaluationTest
+```
+
+## Deployment Notes (Laravel Cloud)
+
+- Ensure migrations run on deploy.
+- Configure a persistent queue worker process.
+- Keep Postmark webhook configured to your production URL.
+- See: `docs/laravel-cloud-queue-workers.md`

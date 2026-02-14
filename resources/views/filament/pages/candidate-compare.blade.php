@@ -3,11 +3,8 @@
         heading="Vergleich konfigurieren"
         description="Waehlen Sie einen Job und mindestens zwei Kandidaten fuer den Side-by-Side Vergleich."
     >
-        <x-filament::grid
-            :default="1"
-            :md="2"
-        >
-            <x-filament::grid.column>
+        <div class="grid gap-6 md:grid-cols-2">
+            <div>
                 <label
                     class="mb-2 block text-sm font-medium text-gray-950 dark:text-white"
                     for="compare-campaign-filter"
@@ -27,9 +24,9 @@
                         @endforeach
                     </x-filament::input.select>
                 </x-filament::input.wrapper>
-            </x-filament::grid.column>
+            </div>
 
-            <x-filament::grid.column>
+            <div>
                 <label
                     class="mb-2 block text-sm font-medium text-gray-950 dark:text-white"
                     for="compare-application-filter"
@@ -48,8 +45,8 @@
                         @endforeach
                     </x-filament::input.select>
                 </x-filament::input.wrapper>
-            </x-filament::grid.column>
-        </x-filament::grid>
+            </div>
+        </div>
     </x-filament::section>
 
     @php

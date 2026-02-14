@@ -136,11 +136,11 @@ class ScorecardEvaluationTest extends TestCase
 
         Livewire::test(ViewApplication::class, ['record' => $application->getRouteKey()])
             ->call('mountAction', 'submit_evaluation')
-            ->set('mountedActionsData.0.stage', ApplicationStatus::Reviewed->value)
-            ->set("mountedActionsData.0.scores.{$competencyA->id}", 4)
-            ->set("mountedActionsData.0.scores.{$competencyB->id}", 5)
-            ->set('mountedActionsData.0.question_responses.0.answer', 'Zeigt starke Fachsignale im Screening und Lebenslauf.')
-            ->set('mountedActionsData.0.rationale', 'Sehr starke Kommunikations- und Fachsignale.')
+            ->set('mountedActions.0.data.stage', ApplicationStatus::Reviewed->value)
+            ->set("mountedActions.0.data.scores.{$competencyA->id}", 4)
+            ->set("mountedActions.0.data.scores.{$competencyB->id}", 5)
+            ->set('mountedActions.0.data.question_responses.0.answer', 'Zeigt starke Fachsignale im Screening und Lebenslauf.')
+            ->set('mountedActions.0.data.rationale', 'Sehr starke Kommunikations- und Fachsignale.')
             ->call('callMountedAction')
             ->assertHasNoErrors();
 

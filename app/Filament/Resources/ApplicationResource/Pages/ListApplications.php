@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ApplicationResource\Pages;
 
 use App\Enums\ApplicationStatus;
-use App\Filament\Exports\ApplicationsExcelExport;
 use App\Filament\Resources\ApplicationResource;
 use App\Models\Application;
 use App\Models\Organization;
@@ -14,35 +13,28 @@ use Filament\Notifications\Notification as FilamentNotification;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Resources\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use pxlrbt\FilamentExcel\Actions\Pages\ExportAction as ExcelExportAction;
 
 class ListApplications extends Page
 {
     protected static string $resource = ApplicationResource::class;
 
-    protected static string $view = 'filament.resources.application-resource.pages.list-applications';
+    protected string $view = 'filament.resources.application-resource.pages.list-applications';
 
     protected function getHeaderActions(): array
     {
-        return [
-            ExcelExportAction::make('exportApplications')
-                ->label('Excel exportieren')
-                ->exports([
-                    ApplicationsExcelExport::make('all_applications')
-                        ->label('Alle Bewerbungen'),
-                ]),
-        ];
+        return [];
     }
 
     public function statusTransitionAction(): Action
@@ -64,7 +56,7 @@ class ListApplications extends Page
                     ->extraAttributes(['class' => 'ms-auto'])
                     ->visible(fn (): bool => $this->isSendMessageSelectedForMountedAction()),
             ])
-            ->mountUsing(function (Form $form, array $arguments): void {
+            ->mountUsing(function (Schema $form, array $arguments): void {
                 $applicationId = (int) ($arguments['applicationId'] ?? 0);
                 $newStatus = (string) ($arguments['newStatus'] ?? '');
                 $application = $this->getBoardQuery()->whereKey($applicationId)->first();
@@ -176,15 +168,17 @@ class ListApplications extends Page
                     }
 
                     $validated = Validator::make($data, [
-                        'template_key' => ['required', 'string'],
+                        'template_key' => ['required'],
                         'subject' => ['required', 'string', 'max:255'],
-                        'message_html' => ['required', 'string'],
+                        'message_html' => ['required'],
                     ])->validate();
 
-                    $templateKey = (string) $validated['template_key'];
+                    $templateKey = is_scalar($validated['template_key'] ?? null)
+                        ? (string) $validated['template_key']
+                        : '';
                     $template = $this->resolveMessageTemplate($templateKey);
                     $subject = trim((string) $validated['subject']);
-                    $messageHtml = (string) $validated['message_html'];
+                    $messageHtml = $this->normalizeMessageHtml($validated['message_html'] ?? null);
 
                     if (blank(trim(strip_tags($messageHtml)))) {
                         throw ValidationException::withMessages([
@@ -343,12 +337,13 @@ class ListApplications extends Page
 
     protected function isSendMessageSelectedForMountedAction(): bool
     {
-        if (! is_array($this->mountedActionsData) || $this->mountedActionsData === []) {
+        if (! is_array($this->mountedActions) || $this->mountedActions === []) {
             return false;
         }
 
-        $lastIndex = array_key_last($this->mountedActionsData);
-        $data = is_int($lastIndex) ? ($this->mountedActionsData[$lastIndex] ?? []) : [];
+        $lastIndex = array_key_last($this->mountedActions);
+        $mountedAction = is_int($lastIndex) ? ($this->mountedActions[$lastIndex] ?? []) : [];
+        $data = is_array($mountedAction['data'] ?? null) ? $mountedAction['data'] : [];
 
         return (int) ($data['send_message'] ?? 0) === 1;
     }
@@ -457,5 +452,18 @@ class ListApplications extends Page
         $templateBodyHtml = (string) preg_replace('/^\s*<p>\s*hallo\s*,?\s*<\/p>/i', '', $templateBodyHtml);
 
         return $salutationParagraph . ltrim($templateBodyHtml);
+    }
+
+    protected function normalizeMessageHtml(mixed $state): string
+    {
+        if (is_array($state)) {
+            return RichContentRenderer::make($state)->toHtml();
+        }
+
+        if (is_string($state)) {
+            return $state;
+        }
+
+        return '';
     }
 }

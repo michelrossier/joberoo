@@ -14,7 +14,7 @@ class FirstJobCallout extends Widget
 
     protected static ?int $sort = 0;
 
-    protected static string $view = 'filament.widgets.first-job-callout';
+    protected string $view = 'filament.widgets.first-job-callout';
 
     protected int | string | array $columnSpan = 'full';
 

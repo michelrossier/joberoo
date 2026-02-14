@@ -13,9 +13,9 @@ use Illuminate\Support\Collection;
 
 class CandidateCompare extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-scale';
 
-    protected static ?string $navigationGroup = 'Bewerbungsmanagement';
+    protected static string|\UnitEnum|null $navigationGroup = 'Bewerbungsmanagement';
 
     protected static ?string $navigationLabel = 'Kandidatenvergleich';
 
@@ -23,7 +23,7 @@ class CandidateCompare extends Page
 
     protected static ?int $navigationSort = 35;
 
-    protected static string $view = 'filament.pages.candidate-compare';
+    protected string $view = 'filament.pages.candidate-compare';
 
     public int | string | null $campaignId = null;
 
