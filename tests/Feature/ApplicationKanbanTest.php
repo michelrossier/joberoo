@@ -11,10 +11,10 @@ use App\Models\CampaignScorecardCompetency;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\ApplicationStatusMessageNotification;
-use Filament\Forms\Components\RichEditor\RichContentRenderer;
-use Illuminate\Notifications\SendQueuedNotifications;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
@@ -136,7 +136,7 @@ class ApplicationKanbanTest extends TestCase
             'email' => 'applicant@example.com',
         ]);
 
-        Livewire::test(ListApplications::class)
+        $component = Livewire::test(ListApplications::class)
             ->call('mountAction', 'statusTransition', [
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Interview->value,
@@ -146,6 +146,14 @@ class ApplicationKanbanTest extends TestCase
             ->set('mountedActions.0.data.subject', 'Kurzes Update zu Ihrer Bewerbung')
             ->set('mountedActions.0.data.message_html', '<p>Vielen Dank fuer Ihre Geduld.</p>')
             ->call('callMountedAction');
+
+        $component->assertDispatched('notificationSent', function (string $eventName, array $params): bool {
+            $notification = $params['notification'] ?? [];
+
+            return $eventName === 'notificationSent'
+                && ($notification['status'] ?? null) === 'success'
+                && ($notification['title'] ?? null) === 'Nachricht gesendet';
+        });
 
         $this->assertDatabaseHas('applications', [
             'id' => $application->id,
@@ -352,13 +360,21 @@ class ApplicationKanbanTest extends TestCase
             'position' => 1,
         ]);
 
-        Livewire::test(ListApplications::class)
+        $component = Livewire::test(ListApplications::class)
             ->call('mountAction', 'statusTransition', [
                 'applicationId' => $application->id,
                 'newStatus' => ApplicationStatus::Accepted->value,
             ])
             ->set('mountedActions.0.data.send_message', 0)
             ->call('callMountedAction');
+
+        $component->assertDispatched('notificationSent', function (string $eventName, array $params): bool {
+            $notification = $params['notification'] ?? [];
+
+            return $eventName === 'notificationSent'
+                && ($notification['status'] ?? null) === 'danger'
+                && ($notification['title'] ?? null) === 'Bewertung erforderlich';
+        });
 
         $this->assertDatabaseHas('applications', [
             'id' => $application->id,

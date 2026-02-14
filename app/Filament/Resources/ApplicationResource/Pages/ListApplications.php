@@ -9,17 +9,17 @@ use App\Models\Organization;
 use App\Notifications\ApplicationStatusMessageNotification;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
-use Filament\Notifications\Notification as FilamentNotification;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Schema;
+use Filament\Notifications\Notification as FilamentNotification;
+use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
-use Filament\Resources\Pages\Page;
+use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
@@ -217,11 +217,11 @@ class ListApplications extends Page
                     'status_to_value' => $newStatus,
                 ], auth()->id());
 
-                FilamentNotification::make()
-                    ->success()
-                    ->title('Nachricht gesendet')
-                    ->body('Die Bewerber-Nachricht wurde erfolgreich gesendet.')
-                    ->send();
+                $this->dispatchNotification(
+                    'success',
+                    'Nachricht gesendet',
+                    'Die Bewerber-Nachricht wurde erfolgreich gesendet.',
+                );
             });
     }
 
@@ -313,11 +313,11 @@ class ListApplications extends Page
             Application::statusRequiresEvaluation($newStatus)
             && ! $application->hasCompleteEvaluation()
         ) {
-            FilamentNotification::make()
-                ->danger()
-                ->title('Bewertung erforderlich')
-                ->body('Vor finalen Entscheidungen ist eine vollstaendige Stage-Bewertung mit Begruendung und Leitfragen noetig.')
-                ->send();
+            $this->dispatchNotification(
+                'danger',
+                'Bewertung erforderlich',
+                'Vor finalen Entscheidungen ist eine vollstaendige Stage-Bewertung mit Begruendung und Leitfragen noetig.',
+            );
 
             return false;
         }
@@ -334,6 +334,22 @@ class ListApplications extends Page
         ], auth()->id());
 
         return true;
+    }
+
+    protected function dispatchNotification(string $status, string $title, string $body): void
+    {
+        $notification = FilamentNotification::make()
+            ->title($title)
+            ->body($body);
+
+        match ($status) {
+            'success' => $notification->success(),
+            'danger' => $notification->danger(),
+            'warning' => $notification->warning(),
+            default => $notification->info(),
+        };
+
+        $this->dispatch('notificationSent', notification: $notification->toArray());
     }
 
     protected function wantsToSendMessage(Get $get): bool
@@ -439,7 +455,7 @@ class ListApplications extends Page
         $salutation = filled($recipientName)
             ? "Guten Tag {$recipientName}"
             : 'Guten Tag';
-        $salutationParagraph = '<p>' . e($salutation) . ',</p>';
+        $salutationParagraph = '<p>'.e($salutation).',</p>';
 
         $templateBodyHtml = trim($templateBodyHtml);
 
@@ -457,7 +473,7 @@ class ListApplications extends Page
 
         $templateBodyHtml = (string) preg_replace('/^\s*<p>\s*hallo\s*,?\s*<\/p>/i', '', $templateBodyHtml);
 
-        return $salutationParagraph . ltrim($templateBodyHtml);
+        return $salutationParagraph.ltrim($templateBodyHtml);
     }
 
     protected function normalizeMessageHtml(mixed $state): string
