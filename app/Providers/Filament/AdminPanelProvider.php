@@ -24,6 +24,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('Recruiteroo')
             ->login()
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->tenant(Organization::class, slugAttribute: 'slug')
             ->navigationGroups([
                 'Bewerbungsmanagement',
