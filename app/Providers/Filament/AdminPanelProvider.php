@@ -18,13 +18,12 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel = $panel
             ->default()
             ->id('admin')
             ->path('admin')
             ->brandName('Recruiteroo')
             ->login()
-            ->viteTheme('resources/css/filament/admin/theme.css')
             ->tenant(Organization::class, slugAttribute: 'slug')
             ->navigationGroups([
                 'Bewerbungsmanagement',
@@ -45,5 +44,12 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+
+        // Avoid hard-failing in production if frontend assets were not built.
+        if (is_file(public_path('build/manifest.json'))) {
+            $panel->viteTheme('resources/css/filament/admin/theme.css');
+        }
+
+        return $panel;
     }
 }
