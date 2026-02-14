@@ -10,19 +10,18 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Schemas\Components\Section;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
-use Filament\Infolists\Components\TextEntry;
 
 class ApplicationResource extends Resource
 {
@@ -206,13 +205,13 @@ class ApplicationResource extends Resource
                         TextEntry::make('resume')
                             ->label('Lebenslauf')
                             ->formatStateUsing(fn ($state, Application $record) => $record->resumeAttachment
-                                ? new HtmlString('<a class="text-primary-600 underline" href="' . e($record->resumeAttachment->downloadUrl()) . '">Herunterladen</a>')
+                                ? new HtmlString('<a class="text-primary-600 underline" href="'.e($record->resumeAttachment->downloadUrl()).'">Herunterladen</a>')
                                 : '-')
                             ->html(),
                         TextEntry::make('cover_letter')
                             ->label('Anschreiben')
                             ->formatStateUsing(fn ($state, Application $record) => $record->coverLetterAttachment
-                                ? new HtmlString('<a class="text-primary-600 underline" href="' . e($record->coverLetterAttachment->downloadUrl()) . '">Herunterladen</a>')
+                                ? new HtmlString('<a class="text-primary-600 underline" href="'.e($record->coverLetterAttachment->downloadUrl()).'">Herunterladen</a>')
                                 : '-')
                             ->html(),
                     ]),
@@ -220,28 +219,32 @@ class ApplicationResource extends Resource
                     ->schema([
                         RepeatableEntry::make('activities')
                             ->label('')
-                            ->contained(false)
+                            ->contained()
                             ->schema([
                                 TextEntry::make('type')
-                                    ->label('Ereignis')
+                                    ->hiddenLabel()
                                     ->badge()
                                     ->formatStateUsing(fn (string $state): string => ApplicationActivity::labelForType($state)),
                                 TextEntry::make('actor.name')
-                                    ->label('Von')
-                                    ->placeholder('System'),
+                                    ->hiddenLabel()
+                                    ->formatStateUsing(function (?string $state, ApplicationActivity $record): string {
+                                        $actor = filled($state) ? $state : 'System';
+                                        $timestamp = $record->created_at?->diffForHumans() ?? '-';
+
+                                        return "{$actor} | {$timestamp}";
+                                    })
+                                    ->color('gray'),
                                 TextEntry::make('note')
-                                    ->label('Notiz')
-                                    ->placeholder('-')
-                                    ->columnSpanFull(),
+                                    ->hiddenLabel()
+                                    ->formatStateUsing(fn (?string $state): string => 'Notiz: '.trim((string) $state))
+                                    ->visible(fn (?string $state): bool => filled($state)),
                                 TextEntry::make('details')
-                                    ->label('Details')
-                                    ->placeholder('-')
-                                    ->columnSpanFull(),
-                                TextEntry::make('created_at')
-                                    ->label('Zeitpunkt')
-                                    ->since(),
+                                    ->hiddenLabel()
+                                    ->formatStateUsing(fn (?string $state): string => 'Details: '.trim((string) $state))
+                                    ->color('gray')
+                                    ->visible(fn (?string $state): bool => filled($state)),
                             ])
-                            ->columns(2),
+                            ->columns(1),
                     ]),
             ]);
     }
