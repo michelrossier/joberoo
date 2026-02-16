@@ -133,7 +133,7 @@ Or run manually:
 
 ```bash
 php artisan serve
-php artisan queue:work database --queue=default --sleep=1 --tries=3 --backoff=10 --timeout=120
+php artisan queue:work database --queue=default --sleep=5 --tries=3 --backoff=30 --timeout=120
 npm run dev
 ```
 
@@ -156,7 +156,7 @@ Default queue config:
 Useful commands:
 
 ```bash
-php artisan queue:work database --queue=default --sleep=1 --tries=3 --backoff=10 --timeout=120 --max-time=3600
+php artisan queue:work database --queue=default --sleep=5 --tries=3 --backoff=30 --timeout=120 --max-time=3600
 php artisan queue:failed
 php artisan queue:retry all
 ```
