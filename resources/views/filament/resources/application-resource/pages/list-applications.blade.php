@@ -1,8 +1,16 @@
 <x-filament-panels::page>
     <div
         class="flex flex-nowrap gap-4 overflow-x-auto pb-2"
-        x-data="{ draggedApplicationId: null, hoveredLane: null }"
-        x-on:dragend.window="draggedApplicationId = null; hoveredLane = null;"
+        x-data="{ draggedApplicationId: null, hoveredLane: null, dragPreviewElement: null }"
+        x-on:dragend.window="
+            draggedApplicationId = null;
+            hoveredLane = null;
+
+            if (dragPreviewElement) {
+                dragPreviewElement.remove();
+                dragPreviewElement = null;
+            }
+        "
     >
         @foreach ($this->lanes as $lane)
             <section
@@ -37,6 +45,11 @@
                         hoveredLane = null;
                         draggedApplicationId = null;
 
+                        if (dragPreviewElement) {
+                            dragPreviewElement.remove();
+                            dragPreviewElement = null;
+                        }
+
                         if (! Number.isNaN(id) && currentStatus !== targetStatus) {
                             $wire.mountAction('statusTransition', {
                                 applicationId: id,
@@ -50,15 +63,40 @@
                             wire:key="application-card-{{ $application->id }}"
                             draggable="true"
                             class="cursor-default rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition duration-150 hover:cursor-grab hover:border-gray-300 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
-                            x-bind:class="draggedApplicationId === {{ $application->id }} ? '-rotate-[10deg] shadow-xl' : ''"
+                            x-bind:class="draggedApplicationId === {{ $application->id }} ? 'pointer-events-none opacity-0' : ''"
                             x-on:dragstart="
+                                if (dragPreviewElement) {
+                                    dragPreviewElement.remove();
+                                    dragPreviewElement = null;
+                                }
+
                                 draggedApplicationId = {{ $application->id }};
                                 event.dataTransfer.setData('application-id', '{{ $application->id }}');
                                 event.dataTransfer.setData('application-status', '{{ $lane['value'] }}');
+                                event.dataTransfer.effectAllowed = 'move';
+
+                                const preview = event.currentTarget.cloneNode(true);
+
+                                preview.classList.remove('opacity-0', 'pointer-events-none');
+                                preview.classList.add('-rotate-[10deg]', 'shadow-xl');
+                                preview.style.position = 'fixed';
+                                preview.style.top = '-9999px';
+                                preview.style.left = '-9999px';
+                                preview.style.width = `${event.currentTarget.offsetWidth}px`;
+                                preview.style.pointerEvents = 'none';
+                                document.body.appendChild(preview);
+
+                                dragPreviewElement = preview;
+                                event.dataTransfer.setDragImage(preview, preview.offsetWidth / 2, 24);
                             "
                             x-on:dragend="
                                 draggedApplicationId = null;
                                 hoveredLane = null;
+
+                                if (dragPreviewElement) {
+                                    dragPreviewElement.remove();
+                                    dragPreviewElement = null;
+                                }
                             "
                         >
                             <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $application->full_name }}</p>
