@@ -1,11 +1,27 @@
 <x-filament-panels::page>
     <div
         class="flex flex-nowrap gap-4 overflow-x-auto pb-2"
-        x-data="{ draggedApplicationId: null, hoveredLane: null }"
-        x-on:dragend.window="
-            draggedApplicationId = null;
-            hoveredLane = null;
-        "
+        x-data="{
+            draggedApplicationId: null,
+            hoveredLane: null,
+            draggedCardElement: null,
+            dragPreviewElement: null,
+            cleanupDragState() {
+                this.draggedApplicationId = null;
+                this.hoveredLane = null;
+
+                if (this.draggedCardElement) {
+                    this.draggedCardElement.classList.remove('opacity-0');
+                    this.draggedCardElement = null;
+                }
+
+                if (this.dragPreviewElement) {
+                    this.dragPreviewElement.remove();
+                    this.dragPreviewElement = null;
+                }
+            }
+        }"
+        x-on:dragend.window="cleanupDragState()"
     >
         @foreach ($this->lanes as $lane)
             <section
@@ -37,8 +53,7 @@
                         const currentStatus = event.dataTransfer.getData('application-status');
                         const targetStatus = '{{ $lane['value'] }}';
 
-                        hoveredLane = null;
-                        draggedApplicationId = null;
+                        cleanupDragState();
 
                         if (! Number.isNaN(id) && currentStatus !== targetStatus) {
                             $wire.mountAction('statusTransition', {
@@ -54,21 +69,35 @@
                             draggable="true"
                             class="cursor-default rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition duration-150 hover:cursor-grab hover:border-gray-300 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
                             x-on:dragstart="
-                                const draggedCardElement = event.currentTarget;
+                                const sourceCardElement = event.currentTarget;
 
                                 draggedApplicationId = {{ $application->id }};
+                                draggedCardElement = sourceCardElement;
                                 event.dataTransfer.setData('application-id', '{{ $application->id }}');
                                 event.dataTransfer.setData('application-status', '{{ $lane['value'] }}');
                                 event.dataTransfer.effectAllowed = 'move';
 
-                                draggedCardElement.classList.add('-rotate-[10deg]', 'shadow-xl');
-                                setTimeout(() => draggedCardElement.classList.add('opacity-0'), 0);
+                                if (dragPreviewElement) {
+                                    dragPreviewElement.remove();
+                                    dragPreviewElement = null;
+                                }
+
+                                const previewElement = sourceCardElement.cloneNode(true);
+                                previewElement.style.position = 'fixed';
+                                previewElement.style.top = '-10000px';
+                                previewElement.style.left = '-10000px';
+                                previewElement.style.width = `${sourceCardElement.offsetWidth}px`;
+                                previewElement.style.pointerEvents = 'none';
+                                previewElement.style.transform = 'rotate(-10deg)';
+                                previewElement.style.boxShadow = '0 20px 45px -16px rgba(15, 23, 42, 0.45)';
+                                previewElement.style.zIndex = '2147483647';
+                                document.body.appendChild(previewElement);
+
+                                dragPreviewElement = previewElement;
+                                event.dataTransfer.setDragImage(previewElement, previewElement.offsetWidth / 2, 24);
+                                sourceCardElement.classList.add('opacity-0');
                             "
-                            x-on:dragend="
-                                draggedApplicationId = null;
-                                hoveredLane = null;
-                                event.currentTarget.classList.remove('opacity-0', '-rotate-[10deg]', 'shadow-xl');
-                            "
+                            x-on:dragend="cleanupDragState()"
                         >
                             <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $application->full_name }}</p>
                             <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">{{ $application->campaign?->title ?? '-' }}</p>
