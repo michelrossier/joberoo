@@ -1,7 +1,14 @@
 <x-filament-panels::page>
-    <div class="flex flex-nowrap gap-4 overflow-x-auto pb-2">
+    <div
+        class="flex flex-nowrap gap-4 overflow-x-auto pb-2"
+        x-data="{ draggedApplicationId: null, hoveredLane: null }"
+        x-on:dragend.window="draggedApplicationId = null; hoveredLane = null;"
+    >
         @foreach ($this->lanes as $lane)
-            <section class="flex h-[calc(100vh-14rem)] min-w-[18rem] max-w-[18rem] flex-col rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <section
+                class="flex h-[calc(100vh-14rem)] min-w-[18rem] max-w-[18rem] flex-col rounded-xl border border-gray-200 bg-white shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-900"
+                x-bind:class="draggedApplicationId !== null && hoveredLane === '{{ $lane['value'] }}' ? 'border-green-300 bg-green-50/40 dark:border-green-700 dark:bg-green-950/30' : ''"
+            >
                 <header class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $lane['label'] }}</h3>
                     <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
@@ -10,12 +17,25 @@
                 </header>
 
                 <div
-                    class="min-h-[12rem] flex-1 space-y-3 overflow-y-auto bg-gray-50/60 p-3 dark:bg-gray-950/30"
-                    x-on:dragover.prevent
+                    class="min-h-[12rem] flex-1 space-y-3 overflow-y-auto bg-gray-50/60 p-3 transition-colors dark:bg-gray-950/30"
+                    x-bind:class="draggedApplicationId !== null && hoveredLane === '{{ $lane['value'] }}' ? 'bg-green-100/40 dark:bg-green-950/45' : ''"
+                    x-on:dragenter.prevent="
+                        if (draggedApplicationId !== null) {
+                            hoveredLane = '{{ $lane['value'] }}';
+                        }
+                    "
+                    x-on:dragover.prevent="
+                        if (draggedApplicationId !== null) {
+                            hoveredLane = '{{ $lane['value'] }}';
+                        }
+                    "
                     x-on:drop.prevent="
                         const id = Number(event.dataTransfer.getData('application-id'));
                         const currentStatus = event.dataTransfer.getData('application-status');
                         const targetStatus = '{{ $lane['value'] }}';
+
+                        hoveredLane = null;
+                        draggedApplicationId = null;
 
                         if (! Number.isNaN(id) && currentStatus !== targetStatus) {
                             $wire.mountAction('statusTransition', {
@@ -29,10 +49,16 @@
                         <article
                             wire:key="application-card-{{ $application->id }}"
                             draggable="true"
-                            class="cursor-default rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:cursor-grab hover:border-gray-300 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
+                            class="cursor-default rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition duration-150 hover:cursor-grab hover:border-gray-300 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
+                            x-bind:class="draggedApplicationId === {{ $application->id }} ? '-rotate-[10deg] shadow-xl' : ''"
                             x-on:dragstart="
+                                draggedApplicationId = {{ $application->id }};
                                 event.dataTransfer.setData('application-id', '{{ $application->id }}');
                                 event.dataTransfer.setData('application-status', '{{ $lane['value'] }}');
+                            "
+                            x-on:dragend="
+                                draggedApplicationId = null;
+                                hoveredLane = null;
                             "
                         >
                             <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $application->full_name }}</p>
