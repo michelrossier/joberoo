@@ -54,13 +54,15 @@
                             draggable="true"
                             class="cursor-default rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition duration-150 hover:cursor-grab hover:border-gray-300 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
                             x-on:dragstart="
+                                const draggedCardElement = event.currentTarget;
+
                                 draggedApplicationId = {{ $application->id }};
                                 event.dataTransfer.setData('application-id', '{{ $application->id }}');
                                 event.dataTransfer.setData('application-status', '{{ $lane['value'] }}');
                                 event.dataTransfer.effectAllowed = 'move';
 
-                                event.currentTarget.classList.add('-rotate-[10deg]', 'shadow-xl');
-                                setTimeout(() => event.currentTarget.classList.add('opacity-0'), 0);
+                                draggedCardElement.classList.add('-rotate-[10deg]', 'shadow-xl');
+                                setTimeout(() => draggedCardElement.classList.add('opacity-0'), 0);
                             "
                             x-on:dragend="
                                 draggedApplicationId = null;
